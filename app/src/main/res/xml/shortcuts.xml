@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="scan_dashboard"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_camera"
+        android:shortcutShortLabel="@string/shortcut_scan_dashboard_short"
+        android:shortcutLongLabel="@string/shortcut_scan_dashboard_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.mndublo.odolens"
+            android:targetClass="com.mndublo.odolens.MainActivity">
+            <extra android:name="scan_target" android:value="trips" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="scan_parking"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_camera"
+        android:shortcutShortLabel="@string/shortcut_scan_parking_short"
+        android:shortcutLongLabel="@string/shortcut_scan_parking_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.mndublo.odolens"
+            android:targetClass="com.mndublo.odolens.MainActivity">
+            <extra android:name="scan_target" android:value="parking" />
+        </intent>
+    </shortcut>
+</shortcuts>
