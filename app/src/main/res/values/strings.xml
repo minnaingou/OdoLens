@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">OdoLens</string>
+    <string name="shortcut_scan_dashboard_short">Scan Dashboard</string>
+    <string name="shortcut_scan_dashboard_long">Scan Car Dashboard for Trips</string>
+    <string name="shortcut_scan_parking_short">Scan Parking</string>
+    <string name="shortcut_scan_parking_long">Scan Parking Ticket</string>
+
+    <!-- Main navigation -->
+    <string name="tab_trips">Trips</string>
+    <string name="tab_parking">Parking</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Shared scan components -->
+    <string name="source_camera">Camera</string>
+    <string name="source_gallery">Gallery</string>
+    <string name="camera_failed_to_load_image">Failed to load captured image.</string>
+
+    <!-- Dashboard screen -->
+    <string name="dashboard_fab_scan">Scan Dashboard</string>
+    <string name="dashboard_gallery_load_error">Failed to load image from gallery.</string>
+
+    <!-- Parking screen -->
+    <string name="parking_fab_scan">Scan Ticket</string>
+    <string name="parking_no_api_key_warning">No Gemini API key set in Settings. Parking tickets will be parsed using basic local regex (English only, no Thai support).</string>
+    <string name="parking_alarm_set_toast">Alarm set! Active warning scheduled.</string>
+    <string name="parking_notification_denied_toast">Parking notifications won\'t be available. Check the timer in the app instead.</string>
+    <string name="parking_extend_cap_toast">Could not extend: 12-hour cap reached.</string>
+    <string name="parking_gallery_load_error">Failed to load image.</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Application Settings</string>
+    <string name="settings_subtitle">Configure AI recognition and preferences</string>
+    <string name="settings_save_button">Save Settings</string>
+    <string name="settings_saved_toast">Settings saved successfully!</string>
+    <string name="settings_ai_section_title">Gemini AI Config</string>
+    <string name="settings_ai_key_label">Gemini API Key</string>
+    <string name="settings_ai_key_hint">Enter a free Gemini API key from Google AI Studio to unlock parking ticket parsing in Thai and highly accurate English parsing.</string>
+    <string name="settings_time_format_title">Time Format</string>
+    <string name="settings_time_24h">24-hour (14:30)</string>
+    <string name="settings_time_12h">12-hour (2:30 PM)</string>
+    <string name="settings_theme_title">App Theme &amp; Appearance</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_debug_title">Debug Menu (Logs)</string>
+    <string name="settings_debug_empty">No logs recorded yet.</string>
+    <string name="settings_debug_clear">Clear Logs</string>
+</resources>
