@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -108,7 +109,14 @@ fun DashboardScreen(
                     ExtendedFloatingActionButton(
                         onClick = { showCamera = true },
                         icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Camera") },
-                        text = { Text(stringResource(com.mndublo.odolens.R.string.dashboard_fab_scan)) }
+                        text = { Text(stringResource(com.mndublo.odolens.R.string.dashboard_fab_scan)) },
+                        shape = MaterialTheme.shapes.extraLarge,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 6.dp,
+                            pressedElevation = 8.dp
+                        )
                     )
                 }
             }

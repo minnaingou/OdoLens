@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -43,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.mndublo.odolens.data.TimeFormatter
@@ -72,7 +70,6 @@ fun ParkingFormSection(
             Text(
                 text = "Expiration Details",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -131,8 +128,7 @@ fun ParkingFormSection(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Free Duration",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                     val displayStr = if (currentMinutes % 60 == 0) {
@@ -143,7 +139,6 @@ fun ParkingFormSection(
                     Text(
                         text = displayStr,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -181,7 +176,7 @@ fun ParkingFormSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                     .padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -194,7 +189,6 @@ fun ParkingFormSection(
                 Text(
                     text = calculatedExpiry,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.tertiary
                 )
             }
@@ -230,7 +224,6 @@ fun AlertOffsetSection(
             Text(
                 text = "Alert Warning Offset",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -307,9 +300,8 @@ fun AlertOffsetSection(
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = "Notification scheduled for: $alarm",
-                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                 }

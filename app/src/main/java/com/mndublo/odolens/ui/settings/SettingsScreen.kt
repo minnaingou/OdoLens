@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
@@ -33,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -73,7 +71,7 @@ fun SettingsScreen(
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -93,7 +91,6 @@ fun SettingsScreen(
                                 Text(
                                     text = stringResource(com.mndublo.odolens.R.string.settings_title),
                                     style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
@@ -126,7 +123,9 @@ fun SettingsScreen(
                 item {
                     ThemeSection(
                         themeMode = uiState.themeMode,
-                        onThemeModeChange = viewModel::onThemeModeChange
+                        onThemeModeChange = viewModel::onThemeModeChange,
+                        dynamicColor = uiState.dynamicColor,
+                        onDynamicColorChange = viewModel::onDynamicColorChange
                     )
                 }
 

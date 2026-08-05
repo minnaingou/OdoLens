@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AddAlarm
@@ -28,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /** Active-timer card: live countdown, expiry/alarm/spot summary, extend + reset actions. */
@@ -45,7 +43,7 @@ fun ParkingTimerCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             modifier = Modifier
@@ -66,9 +64,8 @@ fun ParkingTimerCard(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "PARKING TIMER ACTIVE",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -77,14 +74,12 @@ fun ParkingTimerCard(
             Text(
                 text = countdownText.ifEmpty { "--:--" },
                 style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Time Remaining",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
             )
 
@@ -104,7 +99,7 @@ fun ParkingTimerCard(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Expires At", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
-                    Text(calculatedExpiry, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(calculatedExpiry, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
 
                 scheduledAlarmTime?.let { alarm ->
@@ -118,7 +113,7 @@ fun ParkingTimerCard(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Alert Set For", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
-                        Text(alarm, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(alarm, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
 
@@ -133,7 +128,7 @@ fun ParkingTimerCard(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Parking Spot", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
-                        Text(parkingSpotNote, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(parkingSpotNote, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
@@ -149,7 +144,7 @@ fun ParkingTimerCard(
             ) {
                 Icon(Icons.Default.AddAlarm, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Extend Free Parking", fontWeight = FontWeight.Bold)
+                Text("Extend Free Parking")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -161,7 +156,7 @@ fun ParkingTimerCard(
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Clear & Reset Parking", fontWeight = FontWeight.Bold)
+                Text("Clear & Reset Parking")
             }
         }
     }

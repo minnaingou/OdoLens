@@ -25,6 +25,7 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
         private val NOTIFICATION_OFFSET_MINUTES = intPreferencesKey("notification_offset_minutes")
         private val USE_12_HOUR_FORMAT = androidx.datastore.preferences.core.booleanPreferencesKey("use_12_hour_format")
         private val THEME_MODE = intPreferencesKey("theme_mode") // 0 = System, 1 = Light, 2 = Dark
+        private val DYNAMIC_COLOR = androidx.datastore.preferences.core.booleanPreferencesKey("dynamic_color")
         // Parking timer persistence — survives tab switches
         private val PARKING_EXPIRY_MS = longPreferencesKey("parking_expiry_ms")
         private val PARKING_ALARM_TIME = stringPreferencesKey("parking_alarm_time")
@@ -58,6 +59,10 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
 
     override val themeMode: Flow<Int> = context.settingsDataStore.data.map { preferences ->
         preferences[THEME_MODE] ?: 0 // 0 = System Default, 1 = Light, 2 = Dark
+    }
+
+    override val dynamicColor: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DYNAMIC_COLOR] ?: false // Off by default — app keeps its branded palette
     }
 
     // Parking timer state — 0L means no active timer
@@ -132,6 +137,12 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
     override suspend fun saveThemeMode(mode: Int) {
         context.settingsDataStore.edit { preferences ->
             preferences[THEME_MODE] = mode
+        }
+    }
+
+    override suspend fun saveDynamicColor(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DYNAMIC_COLOR] = enabled
         }
     }
 

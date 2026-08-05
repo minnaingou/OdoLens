@@ -7,8 +7,10 @@ interface SettingsSource {
     val geminiApiKey: Flow<String>
     val use12HourFormat: Flow<Boolean>
     val themeMode: Flow<Int> // 0 = System, 1 = Light, 2 = Dark
+    val dynamicColor: Flow<Boolean> // Wallpaper-derived palette (Material You, Android 12+)
 
     suspend fun saveGeminiApiKey(key: String)
     suspend fun saveUse12HourFormat(use12h: Boolean)
     suspend fun saveThemeMode(mode: Int)
+    suspend fun saveDynamicColor(enabled: Boolean)
 }

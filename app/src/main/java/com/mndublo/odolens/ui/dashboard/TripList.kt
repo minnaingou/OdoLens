@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
@@ -27,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mndublo.odolens.data.Trip
 import androidx.compose.animation.animateColorAsState
@@ -46,7 +44,6 @@ fun LazyListScope.tripList(
         Text(
             text = "Historical Trips",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 8.dp)
         )
     }
@@ -105,7 +102,7 @@ fun LazyListScope.tripList(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(backgroundColor, shape = RoundedCornerShape(12.dp))
+                        .background(backgroundColor, shape = MaterialTheme.shapes.large)
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.CenterEnd
                 ) {
@@ -127,7 +124,6 @@ fun LazyListScope.tripList(
                             Text(
                                 text = "Release to Delete",
                                 color = MaterialTheme.colorScheme.onError,
-                                fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }

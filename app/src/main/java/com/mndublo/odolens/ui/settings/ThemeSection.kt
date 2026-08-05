@@ -1,5 +1,6 @@
 package com.mndublo.odolens.ui.settings
 
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,19 +21,21 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 
-/** "App Theme & Appearance" card: System / Light / Dark selector. */
+/** "App Theme & Appearance" card: System / Light / Dark selector + wallpaper-color toggle. */
 @Composable
 fun ThemeSection(
     themeMode: Int,
-    onThemeModeChange: (Int) -> Unit
+    onThemeModeChange: (Int) -> Unit,
+    dynamicColor: Boolean,
+    onDynamicColorChange: (Boolean) -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
@@ -59,7 +62,6 @@ fun ThemeSection(
                 Text(
                     text = stringResource(com.mndublo.odolens.R.string.settings_theme_title),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             }
@@ -94,6 +96,29 @@ fun ThemeSection(
                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(com.mndublo.odolens.R.string.settings_theme_dynamic_color),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Text(
+                        text = stringResource(com.mndublo.odolens.R.string.settings_theme_dynamic_color_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                    )
+                }
+                Switch(
+                    checked = dynamicColor,
+                    onCheckedChange = onDynamicColorChange,
+                    enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 )
             }
         }

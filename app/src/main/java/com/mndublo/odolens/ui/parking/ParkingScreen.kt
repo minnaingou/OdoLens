@@ -24,13 +24,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -180,7 +180,14 @@ fun ParkingScreen(
                     ExtendedFloatingActionButton(
                         onClick = { showCamera = true },
                         icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Camera") },
-                        text = { Text(stringResource(com.mndublo.odolens.R.string.parking_fab_scan)) }
+                        text = { Text(stringResource(com.mndublo.odolens.R.string.parking_fab_scan)) },
+                        shape = MaterialTheme.shapes.extraLarge,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 6.dp,
+                            pressedElevation = 8.dp
+                        )
                     )
                 }
             }
@@ -202,7 +209,7 @@ fun ParkingScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.large
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),

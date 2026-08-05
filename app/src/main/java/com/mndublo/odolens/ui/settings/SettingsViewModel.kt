@@ -19,6 +19,7 @@ data class SettingsUiState(
     val apiKeyInput: String = "",
     val use12hFormat: Boolean = false,
     val themeMode: Int = 0,
+    val dynamicColor: Boolean = false,
     // One-shot UI feedback flag, consumed by the screen (save toast)
     val saveFeedback: Boolean = false
 )
@@ -33,13 +34,11 @@ class SettingsViewModel(
     init {
         // Sync inputs from persisted values (same behavior as the old LaunchedEffect)
         viewModelScope.launch {
-            combine(settings.geminiApiKey, settings.use12HourFormat, settings.themeMode) { key, use12h, theme ->
-                Triple(key, use12h, theme)
-            }.collect { (key, use12h, theme) ->
+            combine(settings.geminiApiKey, settings.use12HourFormat, settings.themeMode, settings.dynamicColor) { key, use12h, theme, dynamic ->
                 _uiState.update {
-                    it.copy(apiKeyInput = key, use12hFormat = use12h, themeMode = theme)
+                    it.copy(apiKeyInput = key, use12hFormat = use12h, themeMode = theme, dynamicColor = dynamic)
                 }
-            }
+            }.collect { }
         }
     }
 
@@ -57,6 +56,12 @@ class SettingsViewModel(
         viewModelScope.launch { settings.saveThemeMode(value) }
     }
 
+    /** Persists immediately, matching the old chip behavior. */
+    fun onDynamicColorChange(value: Boolean) {
+        _uiState.update { it.copy(dynamicColor = value) }
+        viewModelScope.launch { settings.saveDynamicColor(value) }
+    }
+
     /** Saves all settings and signals the screen to show the confirmation toast. */
     fun saveAll() {
         val s = _uiState.value
@@ -64,6 +69,7 @@ class SettingsViewModel(
             settings.saveGeminiApiKey(s.apiKeyInput)
             settings.saveUse12HourFormat(s.use12hFormat)
             settings.saveThemeMode(s.themeMode)
+            settings.saveDynamicColor(s.dynamicColor)
             _uiState.update { it.copy(saveFeedback = true) }
         }
     }

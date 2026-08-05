@@ -39,7 +39,8 @@ class MainActivity : ComponentActivity() {
         val settingsRepository = com.mndublo.odolens.data.SettingsRepository(applicationContext)
         setContent {
             val themeMode by settingsRepository.themeMode.collectAsState(initial = 0)
-            TripAndTicketOCRTheme(themeMode = themeMode) {
+            val dynamicColor by settingsRepository.dynamicColor.collectAsState(initial = false)
+            TripAndTicketOCRTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     MainNavigation(
                         openExtendSheet = openExtendSheet,

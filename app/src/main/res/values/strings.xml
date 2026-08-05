@@ -42,6 +42,8 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_dynamic_color">Match wallpaper colors</string>
+    <string name="settings_theme_dynamic_color_hint">Use your wallpaper\'s palette (Android 12+)</string>
     <string name="settings_debug_title">Debug Menu (Logs)</string>
     <string name="settings_debug_empty">No logs recorded yet.</string>
     <string name="settings_debug_clear">Clear Logs</string>

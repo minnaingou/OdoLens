@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mndublo.odolens.ui.common.ImageSourceButtons
 
@@ -39,7 +38,6 @@ fun TripScanCard(
             Text(
                 text = "Log New Trip",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(12.dp))
             ImageSourceButtons(

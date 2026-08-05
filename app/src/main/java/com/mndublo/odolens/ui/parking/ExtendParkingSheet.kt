@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAlarm
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
@@ -33,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mndublo.odolens.data.ParkingTimerPlanner
 import java.util.Calendar
@@ -54,7 +54,10 @@ fun ExtendParkingSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.primary)
+        }
     ) {
         Column(
             modifier = Modifier
@@ -65,8 +68,7 @@ fun ExtendParkingSheet(
         ) {
             Text(
                 text = "Extend Free Parking",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(4.dp))
             if (maxExtendHours <= 0) {
@@ -93,8 +95,7 @@ fun ExtendParkingSheet(
                 Text(
                     text = "+${extendHours}h",
                     style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -160,7 +161,6 @@ fun ExtendParkingSheet(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Extend by ${extendHours}h",
-                        fontWeight = FontWeight.Bold
                     )
                 }
             }

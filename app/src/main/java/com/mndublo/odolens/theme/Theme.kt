@@ -55,7 +55,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun TripAndTicketOCRTheme(
     themeMode: Int = 0, // 0 = System Default, 1 = Light Mode, 2 = Dark Mode
-    dynamicColor: Boolean = false, // Enforce our custom theme branding
+    dynamicColor: Boolean = false, // Wallpaper-derived palette (Material You, Android 12+)
     content: @Composable () -> Unit,
 ) {
     val darkTheme = when (themeMode) {
@@ -75,6 +75,7 @@ fun TripAndTicketOCRTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        shapes = ExpressiveShapes,
         typography = Typography,
         content = content
     )

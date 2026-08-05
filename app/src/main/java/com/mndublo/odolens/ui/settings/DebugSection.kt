@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.mndublo.odolens.data.AppLogger
@@ -63,7 +62,6 @@ fun DebugSection() {
                     Text(
                         text = stringResource(com.mndublo.odolens.R.string.settings_debug_title),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
                     )
                 }
                 Icon(
