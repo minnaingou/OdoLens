@@ -73,4 +73,11 @@ class ParkingTimerPlannerTest {
         // Matches the original behavior: unparseable input degrades to 00:00 rather than crashing
         assertEquals("00:00", ParkingTimerPlanner.formatExpiryDisplay("nope", 0, use12h = false))
     }
+
+    @Test
+    fun `formatExpiryDisplay shows AM PM in 12h mode`() {
+        assertEquals("10:00 AM", ParkingTimerPlanner.formatExpiryDisplay("09:00", 60, use12h = true))
+        assertEquals("2:30 PM", ParkingTimerPlanner.formatExpiryDisplay("13:30", 60, use12h = true))
+        assertEquals("12:05 AM", ParkingTimerPlanner.formatExpiryDisplay("23:05", 60, use12h = true))
+    }
 }

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,13 +46,15 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.mndublo.odolens.data.TimeFormatter
 import java.util.Locale
 
-/** "Expiration Details" form: start time, free-duration slider, spot note, expiry preview. */
+/** "Expiration Details" form: quick-start presets, start time, free-duration slider, spot note, expiry preview. */
 @Composable
 fun ParkingFormSection(
     startTimeInput: String,
-    onStartTimeChange: (String) -> Unit,
+    use12h: Boolean,
+    onQuickStart: (minutesAgo: Int) -> Unit,
     onPickTime: () -> Unit,
     freeDurationInput: String,
     onFreeDurationChange: (String) -> Unit,
@@ -72,10 +77,10 @@ fun ParkingFormSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = startTimeInput,
-                onValueChange = onStartTimeChange,
-                label = { Text("Parking Start Time (HH:mm)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                value = TimeFormatter.formatStartTime(startTimeInput, use12h),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Parking Start Time") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
                 trailingIcon = {
@@ -84,6 +89,32 @@ fun ParkingFormSection(
                     }
                 }
             )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(
+                    listOf(
+                        "Now" to 0,
+                        "5m ago" to 5,
+                        "10m ago" to 10,
+                        "15m ago" to 15,
+                        "30m ago" to 30
+                    )
+                ) { (label, mins) ->
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onQuickStart(mins)
+                        },
+                        label = { Text(label) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             val currentMinutes = freeDurationInput.toIntOrNull() ?: 0

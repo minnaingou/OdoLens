@@ -242,7 +242,6 @@ fun ParkingScreen(
                             ParkingScanCard(
                                 onCamera = { showCamera = true },
                                 onGallery = { galleryLauncher.launch("image/*") },
-                                onQuickStart = { viewModel.onQuickStart(it) },
                                 isAiLoading = uiState.isAiLoading,
                                 errorMessage = uiState.errorMessage
                             )
@@ -253,7 +252,8 @@ fun ParkingScreen(
                         item {
                             ParkingFormSection(
                                 startTimeInput = uiState.startTimeInput,
-                                onStartTimeChange = viewModel::onStartTimeChange,
+                                use12h = uiState.use12h,
+                                onQuickStart = viewModel::onQuickStart,
                                 onPickTime = { showTimePicker = true },
                                 freeDurationInput = uiState.freeDurationInput,
                                 onFreeDurationChange = viewModel::onFreeDurationChange,
