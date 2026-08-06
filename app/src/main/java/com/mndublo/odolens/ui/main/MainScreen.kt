@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
+import com.mndublo.odolens.AllTrips
 import com.mndublo.odolens.ui.dashboard.DashboardScreen
 import com.mndublo.odolens.ui.parking.ParkingScreen
 import com.mndublo.odolens.ui.settings.SettingsScreen
@@ -113,7 +114,8 @@ fun MainScreen(
                 when (tab) {
                     0 -> DashboardScreen(
                         autoScan = autoScanTarget == "trips",
-                        onAutoScanHandled = onAutoScanHandled
+                        onAutoScanHandled = onAutoScanHandled,
+                        onViewAllTrips = { onItemClick(AllTrips) }
                     )
                     1 -> ParkingScreen(
                         openExtendSheet = openExtendSheet,

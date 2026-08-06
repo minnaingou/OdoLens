@@ -20,6 +20,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.mndublo.odolens.data.SettingsRepository
+import com.mndublo.odolens.ui.dashboard.AllTripsScreen
 import com.mndublo.odolens.ui.main.MainScreen
 import com.mndublo.odolens.ui.permission.NotificationPermissionScreen
 import kotlinx.coroutines.launch
@@ -82,6 +83,11 @@ fun MainNavigation(
             onParkingTabOpened = onParkingTabOpened,
             autoScanTarget = autoScanTarget,
             onAutoScanHandled = onAutoScanHandled
+          )
+        }
+        entry<AllTrips> {
+          AllTripsScreen(
+            onBack = { backStack.removeLastOrNull() }
           )
         }
       },

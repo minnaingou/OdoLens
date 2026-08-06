@@ -7,8 +7,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,14 +26,23 @@ import java.util.Locale
 
 /** Single historical trip entry. */
 @Composable
-fun TripCard(trip: Trip, use12h: Boolean = false) {
+fun TripCard(
+    trip: Trip,
+    use12h: Boolean = false
+) {
     val dateStr = remember(trip.timestamp, use12h) {
         TimeFormatter.formatTimestamp(trip.timestamp, use12h)
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large
     ) {
@@ -43,7 +56,7 @@ fun TripCard(trip: Trip, use12h: Boolean = false) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = trip.name ?: "Trip on $dateStr",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium
                 )
                 if (trip.name != null) {
                     Text(

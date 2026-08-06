@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -20,6 +21,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,15 +39,29 @@ import androidx.compose.animation.animateColorAsState
 fun LazyListScope.tripList(
     trips: List<Trip>,
     use12h: Boolean,
-    onDelete: (tripId: String) -> Unit
+    onDelete: (tripId: String) -> Unit,
+    onViewAll: (() -> Unit)? = null,
+    onEdit: ((trip: Trip) -> Unit)? = null
 ) {
     // Historical Trips Header
     item {
-        Text(
-            text = "Historical Trips",
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(top = 8.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Historical Trips",
+                style = MaterialTheme.typography.titleLarge
+            )
+            if (onViewAll != null && trips.isNotEmpty()) {
+                androidx.compose.material3.TextButton(onClick = onViewAll) {
+                    Text("View All →", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
     }
 
     // Empty Trips State
@@ -66,36 +82,58 @@ fun LazyListScope.tripList(
         }
     }
 
-    items(trips, key = { it.id }) { trip ->
+    val displayTrips = if (onViewAll != null) trips.take(3) else trips
+
+    items(displayTrips, key = { it.id }) { trip ->
         val haptic = LocalHapticFeedback.current
 
         @Suppress("DEPRECATION")
         val dismissState = rememberSwipeToDismissBoxState(
             confirmValueChange = { dismissValue ->
-                if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onDelete(trip.id)
-                    true
-                } else {
-                    false
+                when (dismissValue) {
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        onDelete(trip.id)
+                        true
+                    }
+                    SwipeToDismissBoxValue.StartToEnd -> {
+                        if (onEdit != null) {
+                            onEdit(trip)
+                        }
+                        false // Don't dismiss item out of list when editing
+                    }
+                    else -> false
                 }
             },
             positionalThreshold = { totalDistance -> totalDistance * 0.5f }
         )
 
+        // Haptic feedback right as the swipe passes the 50% threshold in either direction
+        LaunchedEffect(dismissState.targetValue) {
+            if (dismissState.targetValue != SwipeToDismissBoxValue.Settled) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+        }
+
         SwipeToDismissBox(
             state = dismissState,
             modifier = Modifier.padding(vertical = 4.dp),
-            enableDismissFromStartToEnd = false,
+            enableDismissFromStartToEnd = onEdit != null,
             enableDismissFromEndToStart = true,
             backgroundContent = {
-                val isDismissing = dismissState.targetValue != SwipeToDismissBoxValue.Settled
+                val isThresholdReached = dismissState.targetValue != SwipeToDismissBoxValue.Settled
+                val isStartToEnd = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd || dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
+
                 val backgroundColor by animateColorAsState(
-                    if (isDismissing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                    when {
+                        isStartToEnd && isThresholdReached -> MaterialTheme.colorScheme.primary
+                        isStartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                        isThresholdReached -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
+                    },
                     label = "backgroundColor"
                 )
                 val iconScale by animateFloatAsState(
-                    if (isDismissing) 1.3f else 1.0f,
+                    if (isThresholdReached) 1.3f else 1.0f,
                     label = "iconScale"
                 )
 
@@ -104,7 +142,7 @@ fun LazyListScope.tripList(
                         .fillMaxSize()
                         .background(backgroundColor, shape = MaterialTheme.shapes.large)
                         .padding(horizontal = 24.dp),
-                    contentAlignment = Alignment.CenterEnd
+                    contentAlignment = if (isStartToEnd) Alignment.CenterStart else Alignment.CenterEnd
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -114,18 +152,34 @@ fun LazyListScope.tripList(
                             scaleY = iconScale
                         }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Trip",
-                            tint = if (isDismissing) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        if (isDismissing) {
-                            Text(
-                                text = "Release to Delete",
-                                color = MaterialTheme.colorScheme.onError,
-                                style = MaterialTheme.typography.labelLarge
+                        if (isStartToEnd) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Trip",
+                                tint = if (isThresholdReached) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(28.dp)
                             )
+                            if (isThresholdReached) {
+                                Text(
+                                    text = "Release to Edit",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Trip",
+                                tint = if (isThresholdReached) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            if (isThresholdReached) {
+                                Text(
+                                    text = "Release to Delete",
+                                    color = MaterialTheme.colorScheme.onError,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
                         }
                     }
                 }

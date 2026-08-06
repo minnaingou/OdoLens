@@ -10,6 +10,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -47,7 +48,8 @@ import kotlinx.coroutines.launch
 fun DashboardScreen(
     modifier: Modifier = Modifier,
     autoScan: Boolean = false,
-    onAutoScanHandled: () -> Unit = {}
+    onAutoScanHandled: () -> Unit = {},
+    onViewAllTrips: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -61,6 +63,8 @@ fun DashboardScreen(
     // Transient UI state
     var showCamera by remember { mutableStateOf(false) }
     var showEditPriceDialog by remember { mutableStateOf(false) }
+    var tripToEdit by remember { mutableStateOf<com.mndublo.odolens.data.Trip?>(null) }
+    var editNameInput by remember { mutableStateOf("") }
 
     LaunchedEffect(autoScan) {
         if (autoScan) {
@@ -187,9 +191,52 @@ fun DashboardScreen(
                     tripList(
                         trips = uiState.trips,
                         use12h = uiState.use12h,
-                        onDelete = { viewModel.deleteTrip(it) }
+                        onDelete = { viewModel.deleteTrip(it) },
+                        onViewAll = onViewAllTrips,
+                        onEdit = { trip ->
+                            tripToEdit = trip
+                            editNameInput = trip.name ?: ""
+                        }
                     )
                 }
+            }
+
+            if (tripToEdit != null) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { tripToEdit = null },
+                    title = { Text("Edit Trip Name") },
+                    text = {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = editNameInput,
+                            onValueChange = { editNameInput = it },
+                            label = { Text("Trip Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                val targetId = tripToEdit?.id
+                                if (targetId != null) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    coroutineScope.launch {
+                                        val repo = com.mndublo.odolens.data.TripRepository(context.applicationContext)
+                                        repo.updateTripName(targetId, editNameInput)
+                                    }
+                                }
+                                tripToEdit = null
+                            }
+                        ) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = { tripToEdit = null }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
 
             // Camera Overlay

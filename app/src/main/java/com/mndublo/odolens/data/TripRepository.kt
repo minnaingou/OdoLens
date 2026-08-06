@@ -43,6 +43,13 @@ class TripRepository(private val context: Context) : TripStore {
         writeTripsToFile(currentList)
     }
 
+    override suspend fun updateTripName(tripId: String, newName: String?) = withContext(Dispatchers.IO) {
+        val currentList = _trips.value.map { trip ->
+            if (trip.id == tripId) trip.copy(name = newName?.takeIf { it.isNotBlank() }) else trip
+        }
+        writeTripsToFile(currentList)
+    }
+
     override suspend fun deleteTrip(tripId: String) = withContext(Dispatchers.IO) {
         val currentList = _trips.value.filter { it.id != tripId }
         writeTripsToFile(currentList)

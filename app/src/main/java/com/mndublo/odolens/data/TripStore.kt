@@ -8,5 +8,7 @@ interface TripStore {
 
     suspend fun saveTrip(trip: Trip)
 
+    suspend fun updateTripName(tripId: String, newName: String?)
+
     suspend fun deleteTrip(tripId: String)
 }

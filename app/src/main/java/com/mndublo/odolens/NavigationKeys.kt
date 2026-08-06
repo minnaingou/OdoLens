@@ -7,3 +7,6 @@ import kotlinx.serialization.Serializable
 
 // First-launch notification permission explainer screen
 @Serializable data object Permission : NavKey
+
+// All trips list with search and edit
+@Serializable data object AllTrips : NavKey
