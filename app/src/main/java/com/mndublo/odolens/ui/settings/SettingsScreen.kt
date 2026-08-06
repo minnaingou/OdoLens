@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Settings
@@ -30,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -38,14 +40,29 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scrollToApiKey: Boolean = false,
+    onScrollToApiKeyHandled: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val listState = rememberLazyListState()
+    val focusRequester = remember { FocusRequester() }
 
     val viewModel: SettingsViewModel = viewModel(
         factory = remember(context) { SettingsViewModel.factory(context.applicationContext) }
     )
     val uiState by viewModel.uiState.collectAsState()
+
+    // Scroll & focus API key input if requested
+    LaunchedEffect(scrollToApiKey) {
+        if (scrollToApiKey) {
+            listState.animateScrollToItem(index = 1)
+            try {
+                focusRequester.requestFocus()
+            } catch (_: Exception) {}
+            onScrollToApiKeyHandled()
+        }
+    }
 
     // One-shot feedback: confirmation toast after saving
     LaunchedEffect(uiState.saveFeedback) {
@@ -62,6 +79,7 @@ fun SettingsScreen(
                 .padding(innerPadding)
         ) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 8.dp),
@@ -107,7 +125,8 @@ fun SettingsScreen(
                 item {
                     ApiKeySection(
                         apiKeyInput = uiState.apiKeyInput,
-                        onApiKeyChange = viewModel::onApiKeyChange
+                        onApiKeyChange = viewModel::onApiKeyChange,
+                        focusRequester = focusRequester
                     )
                 }
 

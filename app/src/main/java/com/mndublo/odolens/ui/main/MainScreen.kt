@@ -39,13 +39,20 @@ fun MainScreen(
     onExtendSheetOpened: () -> Unit = {},
     openParkingTab: Boolean = false,
     onParkingTabOpened: () -> Unit = {},
+    openSettingsTab: Boolean = false,
+    onSettingsTabOpened: () -> Unit = {},
     autoScanTarget: String? = null,
     onAutoScanHandled: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var scrollToApiKey by remember { mutableStateOf(false) }
 
-    LaunchedEffect(openExtendSheet, openParkingTab, autoScanTarget) {
-        if (openParkingTab || openExtendSheet) {
+    LaunchedEffect(openExtendSheet, openParkingTab, openSettingsTab, autoScanTarget) {
+        if (openSettingsTab) {
+            selectedTab = 2
+            scrollToApiKey = true
+            onSettingsTabOpened()
+        } else if (openParkingTab || openExtendSheet) {
             selectedTab = 1
             onParkingTabOpened()
         } else if (autoScanTarget == "trips") {
@@ -115,7 +122,11 @@ fun MainScreen(
                     0 -> DashboardScreen(
                         autoScan = autoScanTarget == "trips",
                         onAutoScanHandled = onAutoScanHandled,
-                        onViewAllTrips = { onItemClick(AllTrips) }
+                        onViewAllTrips = { onItemClick(AllTrips) },
+                        onNavigateToSettings = {
+                            selectedTab = 2
+                            scrollToApiKey = true
+                        }
                     )
                     1 -> ParkingScreen(
                         openExtendSheet = openExtendSheet,
@@ -123,7 +134,10 @@ fun MainScreen(
                         autoScan = autoScanTarget == "parking",
                         onAutoScanHandled = onAutoScanHandled
                     )
-                    2 -> SettingsScreen()
+                    2 -> SettingsScreen(
+                        scrollToApiKey = scrollToApiKey,
+                        onScrollToApiKeyHandled = { scrollToApiKey = false }
+                    )
                 }
             }
         }

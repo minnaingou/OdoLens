@@ -9,13 +9,20 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -23,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -49,7 +58,8 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     autoScan: Boolean = false,
     onAutoScanHandled: () -> Unit = {},
-    onViewAllTrips: () -> Unit = {}
+    onViewAllTrips: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -73,7 +83,7 @@ fun DashboardScreen(
         }
     }
 
-    // One-shot feedback: haptic when a scan finishes (success or failure)
+    // One-shot feedback from ViewModel actions (e.g., scan complete)
     LaunchedEffect(uiState.scanFeedback) {
         if (uiState.scanFeedback) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -81,7 +91,7 @@ fun DashboardScreen(
         }
     }
 
-    // Picker launcher for Gallery
+    // Gallery Picker
     val galleryLoadErrorMessage = stringResource(com.mndublo.odolens.R.string.dashboard_gallery_load_error)
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -142,6 +152,44 @@ fun DashboardScreen(
                     fuelPriceDate = uiState.fuelPriceDate,
                     onEditClick = { showEditPriceDialog = true }
                 )
+
+                if (uiState.apiKey.isBlank()) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "No Gemini API key set. Fuel economy reading may be inaccurate.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(
+                                onClick = { onNavigateToSettings() }
+                            ) {
+                                Text("Set up →", color = MaterialTheme.colorScheme.onErrorContainer)
+                            }
+                        }
+                    }
+                }
 
                 if (showEditPriceDialog) {
                     EditFuelPriceDialog(
@@ -215,7 +263,7 @@ fun DashboardScreen(
                         )
                     },
                     confirmButton = {
-                        androidx.compose.material3.TextButton(
+                        TextButton(
                             onClick = {
                                 val targetId = tripToEdit?.id
                                 if (targetId != null) {
@@ -232,7 +280,7 @@ fun DashboardScreen(
                         }
                     },
                     dismissButton = {
-                        androidx.compose.material3.TextButton(onClick = { tripToEdit = null }) {
+                        TextButton(onClick = { tripToEdit = null }) {
                             Text("Cancel")
                         }
                     }

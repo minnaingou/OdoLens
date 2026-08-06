@@ -8,5 +8,8 @@ import kotlinx.serialization.Serializable
 // First-launch notification permission explainer screen
 @Serializable data object Permission : NavKey
 
+// First-launch Gemini API key setup explainer screen
+@Serializable data object ApiKeySetup : NavKey
+
 // All trips list with search and edit
 @Serializable data object AllTrips : NavKey
