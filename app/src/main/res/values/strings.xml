@@ -21,7 +21,7 @@
 
     <!-- Parking screen -->
     <string name="parking_fab_scan">Scan Ticket</string>
-    <string name="parking_no_api_key_warning">No Gemini API key set in Settings. Parking tickets will be parsed using basic local regex (English only, no Thai support).</string>
+    <string name="parking_no_api_key_warning">No Gemini API key set in Settings. Parking ticket scanning won\'t function without an API key.</string>
     <string name="parking_alarm_set_toast">Alarm set! Active warning scheduled.</string>
     <string name="parking_notification_denied_toast">Parking notifications won\'t be available. Check the timer in the app instead.</string>
     <string name="parking_extend_cap_toast">Could not extend: 12-hour cap reached.</string>
