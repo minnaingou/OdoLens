@@ -74,7 +74,8 @@ data class ParkingUiState(
 class ParkingViewModel(
     private val settings: ParkingSettingsSource,
     private val scheduler: ParkingAlarmScheduler,
-    private val parser: ParkingTicketParser
+    private val parser: ParkingTicketParser,
+    private val now: () -> Long = { System.currentTimeMillis() }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ParkingUiState())
@@ -139,10 +140,10 @@ class ParkingViewModel(
                     if (running && expiry > 0L) {
                         countdownJob = viewModelScope.launch {
                             while (isActive) {
-                                val now = System.currentTimeMillis()
+                                val nowMs = now()
                                 _uiState.update { st ->
                                     st.copy(
-                                        countdownText = ParkingTimerPlanner.formatCountdown(expiry - now),
+                                        countdownText = ParkingTimerPlanner.formatCountdown(expiry - nowMs),
                                         timerProgressFraction = ParkingTimerPlanner.remainingFraction(
                                             expiryMs = expiry,
                                             totalMs = ParkingTimerPlanner.countdownTotalMs(
@@ -150,7 +151,7 @@ class ParkingViewModel(
                                                 startTime = st.startTime,
                                                 expiryMs = expiry
                                             ),
-                                            nowMs = now
+                                            nowMs = nowMs
                                         )
                                     )
                                 }
@@ -220,6 +221,19 @@ class ParkingViewModel(
     fun scheduleAlarm() {
         val s = _uiState.value
         val freeDur = s.freeDurationInput.toIntOrNull() ?: 0
+        // Reject schedules whose free window has already elapsed (or that are malformed) —
+        // never silently roll a past expiry to tomorrow.
+        val validationError = ParkingTimerPlanner.validateSchedule(
+            startTime = s.startTimeInput,
+            freeMinutes = freeDur,
+            now = now()
+        )
+        if (validationError != null) {
+            _uiState.update {
+                it.copy(errorMessage = validationError, scheduleFailed = true)
+            }
+            return
+        }
         viewModelScope.launch {
             try {
                 val alarmMs = scheduler.scheduleParkingAlarm(

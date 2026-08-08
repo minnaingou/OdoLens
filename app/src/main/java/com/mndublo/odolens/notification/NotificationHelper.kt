@@ -120,19 +120,11 @@ object NotificationHelper {
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
 
-        // Add free duration
+        // Add free duration, then subtract the warning offset. No next-day roll: a past
+        // alarm time is scheduled as-is and AlarmManager fires it immediately.
         calendar.add(Calendar.MINUTE, freeDurationMinutes)
-        // Subtract warning offset
         calendar.add(Calendar.MINUTE, -offsetMinutes)
-
-        val now = Calendar.getInstance().timeInMillis
-        return if (calendar.timeInMillis <= now) {
-            // Push to the next day at the same wall‑clock time
-            calendar.add(Calendar.DATE, 1)
-            calendar.timeInMillis
-        } else {
-            calendar.timeInMillis
-        }
+        return calendar.timeInMillis
     }
 
     fun showInstantConfirmationNotification(
@@ -156,9 +148,6 @@ object NotificationHelper {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             add(Calendar.MINUTE, freeDurationMinutes)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(Calendar.DATE, 1)
-            }
         }
 
         val expiryTimeStr = TimeFormatter.formatTime(
@@ -232,9 +221,6 @@ object NotificationHelper {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             add(Calendar.MINUTE, freeDurationMinutes)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(Calendar.DATE, 1)
-            }
         }
         
         val expiryTimeStr = TimeFormatter.formatTime(

@@ -17,26 +17,53 @@ object ParkingTimerPlanner {
         minOf(currentFreeMinutes + additionalMinutes, MAX_FREE_MINUTES)
 
     /**
-     * Wall-clock expiry millis for a parking session starting at "HH:mm" and lasting [freeMinutes].
-     * If the computed time is already in the past it is rolled to the next day.
+     * Validates a parking schedule against [now]. Returns a user-facing error message when the
+     * schedule cannot be honoured — malformed start time, non-positive free duration, or the free
+     * window has already elapsed (expiry is in the past) — or null when it is schedulable.
+     *
+     * There is deliberately no next-day roll here: a window whose expiry already passed is an
+     * error, never a silently scheduled ~24h timer.
      */
-    fun computeExpiryMillis(
+    fun validateSchedule(
         startTime: String,
         freeMinutes: Int,
         now: Long = System.currentTimeMillis()
-    ): Long {
+    ): String? {
         val parts = startTime.split(":")
-        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
-        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
-        val cal = Calendar.getInstance().apply {
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return "Enter a valid start time (HH:mm)"
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: return "Enter a valid start time (HH:mm)"
+        if (hour !in 0..23 || minute !in 0..59) return "Enter a valid start time (HH:mm)"
+        if (freeMinutes <= 0) return "Free duration must be greater than 0 minutes"
+        val expiry = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             add(Calendar.MINUTE, freeMinutes)
-            if (timeInMillis <= now) add(Calendar.DATE, 1)
+        }.timeInMillis
+        return if (expiry <= now) {
+            "Free parking period has already expired - adjust the start time or free duration"
+        } else {
+            null
         }
-        return cal.timeInMillis
+    }
+
+    /**
+     * Wall-clock expiry millis for a parking session starting at "HH:mm" and lasting [freeMinutes],
+     * interpreted on the current day. There is deliberately no next-day roll: if the computed time
+     * is already in the past the caller must treat it as an error (see [validateSchedule]).
+     */
+    fun computeExpiryMillis(startTime: String, freeMinutes: Int): Long {
+        val parts = startTime.split(":")
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        return Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.MINUTE, freeMinutes)
+        }.timeInMillis
     }
 
     /** "HH:mm" expiry display for the form preview (no next-day roll). */

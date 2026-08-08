@@ -109,6 +109,8 @@ fun ParkingScreen(
         }
     }
 
+    val listState = rememberLazyListState()
+
     // One-shot feedback from ViewModel actions
     LaunchedEffect(uiState.alarmJustScheduled) {
         if (uiState.alarmJustScheduled) {
@@ -120,6 +122,9 @@ fun ParkingScreen(
     LaunchedEffect(uiState.scheduleFailed) {
         if (uiState.scheduleFailed) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            // The error message is shown in the scan card at the top of the list while the
+            // Set Alarm button sits at the bottom — scroll back up so the user can see it.
+            listState.animateScrollToItem(0)
             viewModel.consumeScheduleFailed()
         }
     }
@@ -160,7 +165,6 @@ fun ParkingScreen(
         }
     )
 
-    val listState = rememberLazyListState()
     val isFabVisible by rememberFabVisibility(listState)
 
     // Scroll to top when timer starts so the countdown card is immediately visible
@@ -245,6 +249,15 @@ fun ParkingScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    uiState.errorMessage?.let { error ->
+                        item {
+                            ParkingErrorCard(
+                                errorMessage = error,
+                                onDismiss = viewModel::clearErrorMessage
+                            )
+                        }
+                    }
+
                     item {
                         if (uiState.isTimerRunning) {
                             ParkingTimerCard(
@@ -260,8 +273,7 @@ fun ParkingScreen(
                             ParkingScanCard(
                                 onCamera = { showCamera = true },
                                 onGallery = { galleryLauncher.launch("image/*") },
-                                isAiLoading = uiState.isAiLoading,
-                                errorMessage = uiState.errorMessage
+                                isAiLoading = uiState.isAiLoading
                             )
                         }
                     }

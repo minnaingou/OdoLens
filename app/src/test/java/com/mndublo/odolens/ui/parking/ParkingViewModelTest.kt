@@ -165,14 +165,22 @@ class ParkingViewModelTest {
         val vm: ParkingViewModel,
         val settings: FakeParkingSettings,
         val scheduler: FakeScheduler,
-        val parser: FakeParser
+        val parser: FakeParser,
+        val nowMs: Long
     )
 
     private fun fixture(
         settings: FakeParkingSettings = FakeParkingSettings(),
         scheduler: FakeScheduler = FakeScheduler(),
-        parser: FakeParser = FakeParser()
-    ): Fixture = Fixture(ParkingViewModel(settings, scheduler, parser), settings, scheduler, parser)
+        parser: FakeParser = FakeParser(),
+        nowMs: Long = System.currentTimeMillis() - 24 * 3600_000L
+    ): Fixture = Fixture(
+        ParkingViewModel(settings, scheduler, parser, now = { nowMs }),
+        settings,
+        scheduler,
+        parser,
+        nowMs
+    )
 
     @Test
     fun `scheduleAlarm persists timer and signals success`() = runTest {
@@ -202,10 +210,30 @@ class ParkingViewModelTest {
     @Test
     fun `scheduleAlarm failure sets error and failed flag`() = runTest {
         val f = fixture(scheduler = ThrowingScheduler())
+        f.vm.onStartTimeChange("09:30")
+        f.vm.onFreeDurationChange("60")
         f.vm.scheduleAlarm()
 
         assertTrue(f.vm.uiState.value.scheduleFailed)
         assertTrue(f.vm.uiState.value.errorMessage.orEmpty().contains("Failed to schedule alarm"))
+        f.vm.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `scheduleAlarm with expired free window shows error and does not schedule`() = runTest {
+        // Reproduced bug scenario: started 30 min ago with 30 min free -> the window has
+        // already elapsed. A real clock is used so the past window is genuinely in the past.
+        val f = fixture(nowMs = System.currentTimeMillis())
+        f.vm.onQuickStart(30)
+        f.vm.onFreeDurationChange("30")
+
+        f.vm.scheduleAlarm()
+
+        assertNotNull(f.vm.uiState.value.errorMessage)
+        assertTrue(f.vm.uiState.value.errorMessage.orEmpty().contains("already expired"))
+        assertTrue(f.vm.uiState.value.scheduleFailed)
+        assertFalse(f.scheduler.scheduled)
+        assertEquals(null, f.settings.savedTimer)
         f.vm.viewModelScope.cancel()
     }
 
@@ -274,7 +302,7 @@ class ParkingViewModelTest {
     @Test
     fun `countdown starts when a timer is active`() = runTest {
         val f = fixture()
-        f.settings.expiryFlow.value = System.currentTimeMillis() + 2 * 3600_000L
+        f.settings.expiryFlow.value = f.nowMs + 2 * 3600_000L
 
         assertTrue(
             "expected HH:mm:ss countdown, was '${f.vm.uiState.value.countdownText}'",
@@ -287,7 +315,7 @@ class ParkingViewModelTest {
     fun `progress fraction recomputes when the free duration lands after expiry`() = runTest {
         val f = fixture()
         // Expiry arrives before the persisted free duration (separate settings flows).
-        f.settings.expiryFlow.value = System.currentTimeMillis() + 30 * 60_000L
+        f.settings.expiryFlow.value = f.nowMs + 30 * 60_000L
         // Zero duration -> no window -> full ring.
         assertEquals(1f, f.vm.uiState.value.timerProgressFraction)
 

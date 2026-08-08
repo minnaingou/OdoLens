@@ -26,6 +26,7 @@
     <string name="parking_notification_denied_toast">Parking notifications won\'t be available. Check the timer in the app instead.</string>
     <string name="parking_extend_cap_toast">Could not extend: 12-hour cap reached.</string>
     <string name="parking_gallery_load_error">Failed to load image.</string>
+    <string name="parking_error_dismiss">Dismiss error</string>
 
     <!-- Settings screen -->
     <string name="settings_title">Application Settings</string>

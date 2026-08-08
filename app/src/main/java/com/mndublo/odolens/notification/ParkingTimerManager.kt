@@ -36,6 +36,9 @@ object ParkingTimerManager {
         val use12h = settings.use12HourFormat.first()
 
         if (expiryMs == 0L || startTime.isBlank()) return false
+        // Never extend a timer whose window has already elapsed — with the next-day roll gone,
+        // extending an expired session would just produce a past expiry and an immediate alarm.
+        if (expiryMs <= System.currentTimeMillis()) return false
 
         // 12-hour cap on total free duration
         val newFree = ParkingTimerPlanner.newFreeDuration(currentFree, additionalMinutes)

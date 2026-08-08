@@ -25,8 +25,7 @@ import com.mndublo.odolens.ui.common.ImageSourceButtons
 fun ParkingScanCard(
     onCamera: () -> Unit,
     onGallery: () -> Unit,
-    isAiLoading: Boolean,
-    errorMessage: String?
+    isAiLoading: Boolean
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -54,15 +53,6 @@ fun ParkingScanCard(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text("Analyzing Ticket with Gemini AI...")
                 }
-            }
-
-            errorMessage?.let { error ->
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
             }
         }
     }
