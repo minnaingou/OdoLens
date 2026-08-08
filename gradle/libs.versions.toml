@@ -23,8 +23,13 @@ kotlinxSerializationJson = "1.6.3"
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidxComposeBom" }
-# material3 version is managed by the Compose BOM (androidx-compose-bom).
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3"}
+# Pinned above the BOM (which maps to material3 1.4.0) for the M3 Expressive wavy progress
+# indicators (CircularWavyProgressIndicator). alpha14 is the newest 1.5.0-alpha that still
+# targets Compose 1.8.x, so the BOM's Compose 1.10.6 stack is NOT upgraded transitively. The wavy
+# API is @ExperimentalMaterial3ExpressiveApi here (it was promoted to stable API in 1.5.0-alpha18,
+# but alpha15+ requires Compose 1.11/1.12). Do not bump past alpha14 without also bumping the
+# whole Compose BOM.
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.5.0-alpha14" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui"}
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview"}
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4"}

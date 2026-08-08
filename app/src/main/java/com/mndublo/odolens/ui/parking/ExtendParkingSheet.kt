@@ -38,7 +38,10 @@ import androidx.compose.ui.unit.dp
 import com.mndublo.odolens.data.ParkingTimerPlanner
 import java.util.Calendar
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class
+)
 /** Bottom sheet to extend the running parking timer (12-hour cap enforced by the planner). */
 @Composable
 fun ExtendParkingSheet(
@@ -154,7 +157,10 @@ fun ExtendParkingSheet(
                         onDismiss()
                         onExtend(extendHours)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // M3 Expressive Medium tier (56dp) for the primary hero action.
+                        .height(ButtonDefaults.MediumContainerHeight),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     Icon(Icons.Default.AddAlarm, contentDescription = null)

@@ -24,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -197,6 +198,7 @@ fun ParkingFormSection(
 }
 
 /** "Alert Warning Offset" card: preset/custom offset chips and the Set Alarm Reminder button. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AlertOffsetSection(
     warningOffsetMinutes: Int,
@@ -274,7 +276,10 @@ fun AlertOffsetSection(
 
             Button(
                 onClick = onSetAlarm,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // M3 Expressive Medium tier (56dp) for the primary hero action.
+                    .height(ButtonDefaults.MediumContainerHeight),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Default.Alarm, contentDescription = null)

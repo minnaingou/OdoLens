@@ -25,24 +25,32 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 
 /**
- * Active-timer card: live countdown ring rendered with the native M3 [CircularProgressIndicator]
- * (expressive spring motion + track gap), plus expiry / alert / spot summary and extend + reset
- * actions.
+ * Active-timer card: live countdown ring rendered with the native M3 expressive
+ * [CircularWavyProgressIndicator] (wavy stroke + spring motion + track gap), plus expiry / alert
+ * / spot summary and extend + reset actions.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ParkingTimerCard(
     countdownText: String,
@@ -144,7 +152,10 @@ fun ParkingTimerCard(
 
             Button(
                 onClick = onExtend,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // M3 Expressive Medium tier (56dp) for the primary hero action.
+                    .height(ButtonDefaults.MediumContainerHeight),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondary
                 )
@@ -170,11 +181,12 @@ fun ParkingTimerCard(
 }
 
 /**
- * The countdown hero: a native M3 circular indicator that depletes with the remaining time, with
- * the "HH:MM:SS" text centered inside it. Progress moves with the M3 expressive spring
- * ([ProgressIndicatorDefaults.ProgressAnimationSpec]); the ring color shifts to the error role
- * under 25% remaining.
+ * The countdown hero: a native M3 expressive wavy circular indicator that depletes with the
+ * remaining time, with the "HH:MM:SS" text centered inside it. Progress moves with the M3
+ * expressive spring ([ProgressIndicatorDefaults.ProgressAnimationSpec]); the wave color shifts to
+ * the error role under 25% remaining.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CountdownRing(
     countdownText: String,
@@ -195,6 +207,30 @@ private fun CountdownRing(
         animationSpec = tween(durationMillis = 600),
         label = "countdownColor"
     )
+    // Wavy strokes take pixel widths; convert the previous 16.dp ring thickness once per
+    // composition and reuse it for both the wave and its track so they stay aligned.
+    val density = LocalDensity.current
+    val ringStroke = remember(density) {
+        Stroke(width = with(density) { 16.dp.toPx() }, cap = StrokeCap.Round)
+    }
+
+    // The wavy shape is a circle<->ripple Morph that is only ever *created* the first time the
+    // amplitude target changes (see DeterminateCircularWavyProgressNode) — a constant amplitude,
+    // even a non-zero one, renders as a plain flat circle forever. Relying on `progress == 1f`
+    // for that first "0 -> non-zero" change is fragile: if this composable first enters
+    // composition after the countdown has already ticked below 100% (very common — state is
+    // computed a frame before Compose picks it up, or the screen is reopened mid-timer), the
+    // very first frame already has progress < 1f and amplitude is a constant 0.5f from frame
+    // one, so the Morph never gets created and the wave never appears.
+    //
+    // Fix: decouple the transition from `progress` entirely. `waveArmed` starts false (so the
+    // first composed frame always renders amplitude 0f, i.e. a flat circle) and flips true one
+    // frame later via LaunchedEffect, guaranteeing a real 0 -> 0.5 change happens exactly once
+    // regardless of what progress the timer starts at.
+    var waveArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        waveArmed = true
+    }
 
     Box(
         contentAlignment = Alignment.Center,
@@ -202,16 +238,30 @@ private fun CountdownRing(
             .size(280.dp)
             .padding(4.dp)
     ) {
-        CircularProgressIndicator(
+        CircularWavyProgressIndicator(
             progress = { animatedProgress },
             modifier = Modifier.fillMaxSize(),
             color = indicatorColor,
             // Neutral, low-alpha track: keeps the full circle visible while reading as an
             // intentional track on the solid surfaceVariant card (not a tinted background).
             trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
-            strokeWidth = 16.dp,
-            strokeCap = StrokeCap.Round,
-            gapSize = 8.dp
+            stroke = ringStroke,
+            trackStroke = ringStroke,
+            gapSize = 8.dp,
+            // Wave geometry follows the official M3 Expressive demo recipe
+            // (CircularWavyProgressIndicatorSample): amplitude 1.0 = the full default wave depth,
+            // and ~9 undulations around the ring. The token defaults are tuned for the 48dp
+            // reference container — 15dp wavelength there yields 2*pi*(24-2)/15 ~= 9 waves, so
+            // here (272dp ring, 16dp stroke -> centerline radius 128dp) the wavelength is scaled
+            // to keep the same ~9 clean waves: 2*pi*128/9 ~= 88dp. The smaller 15dp default would
+            // pack ~53 waves onto this ring and read as a knurled edge.
+            wavelength = 88.dp,
+            // A constant amplitude would render NO wave: the wavy shape is a circle<->ripple
+            // Morph that only gets created when the amplitude target *changes* (see
+            // DeterminateCircularWavyProgressNode). So: flat only until waveArmed flips, then a
+            // one-time 0 -> 1 ripple-in, held for the whole countdown. 1f is the demo default
+            // (wave depth = 25% of the ring radius); scale down (e.g. 0.6f) for a subtler wave.
+            amplitude = { if (waveArmed && progress < 1f) 1f else 0f }
         )
 
         Column(
