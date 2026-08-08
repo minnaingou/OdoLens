@@ -27,6 +27,9 @@ import kotlinx.coroutines.launch
 
 data class ParkingUiState(
     val apiKey: String = "",
+    // True once persisted settings have been read; gates the missing-key warning so it
+    // doesn't flash on launch before the real value arrives.
+    val settingsLoaded: Boolean = false,
     val use12h: Boolean = false,
     val expiryMs: Long = 0L,
     val alarmTime: String = "",
@@ -90,7 +93,7 @@ class ParkingViewModel(
         viewModelScope.launch {
             combine(settings.geminiApiKey, settings.use12HourFormat) { apiKey, use12h -> apiKey to use12h }
                 .collect { (apiKey, use12h) ->
-                    _uiState.update { it.copy(apiKey = apiKey, use12h = use12h) }
+                    _uiState.update { it.copy(apiKey = apiKey, use12h = use12h, settingsLoaded = true) }
                 }
         }
         viewModelScope.launch {

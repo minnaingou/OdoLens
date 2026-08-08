@@ -1,5 +1,9 @@
 package com.mndublo.odolens.ui.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +48,7 @@ fun DebugSection() {
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 48.dp)
@@ -70,41 +75,47 @@ fun DebugSection() {
                 )
             }
 
-            if (showDebugMenu) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                ) {
-                    Box(
+            AnimatedVisibility(
+                visible = showDebugMenu,
+                enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
+                    expandVertically(animationSpec = tween(durationMillis = 250))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .height(200.dp)
                     ) {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            item {
-                                Text(
-                                    text = if (logs.isBlank()) stringResource(com.mndublo.odolens.R.string.settings_debug_empty) else logs,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = FontFamily.Monospace
-                                )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                        ) {
+                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                item {
+                                    Text(
+                                        text = if (logs.isBlank()) stringResource(com.mndublo.odolens.R.string.settings_debug_empty) else logs,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = { AppLogger.clear() }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        Icon(Icons.Default.Clear, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(com.mndublo.odolens.R.string.settings_debug_clear))
+                        TextButton(
+                            onClick = { AppLogger.clear() }
+                        ) {
+                            Icon(Icons.Default.Clear, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(com.mndublo.odolens.R.string.settings_debug_clear))
+                        }
                     }
                 }
             }

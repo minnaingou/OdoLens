@@ -26,6 +26,9 @@ data class DashboardUiState(
     val fuelPriceDate: String = "",
     val use12h: Boolean = false,
     val apiKey: String = "",
+    // True once persisted settings have been read; gates the missing-key warning so it
+    // doesn't flash on launch before the real value arrives.
+    val settingsLoaded: Boolean = false,
     val distanceInput: String = "",
     val economyInput: String = "",
     val tripNameInput: String = "",
@@ -77,7 +80,7 @@ class DashboardViewModel(
         viewModelScope.launch {
             combine(settings.use12HourFormat, settings.geminiApiKey) { use12h, key -> use12h to key }
                 .collect { (use12h, key) ->
-                    _uiState.update { it.copy(use12h = use12h, apiKey = key) }
+                    _uiState.update { it.copy(use12h = use12h, apiKey = key, settingsLoaded = true) }
                 }
         }
     }
@@ -176,6 +179,8 @@ class DashboardViewModel(
     }
 
     fun showError(message: String) = _uiState.update { it.copy(errorMessage = message) }
+
+    fun clearErrorMessage() = _uiState.update { it.copy(errorMessage = null) }
 
     fun consumeScanFeedback() = _uiState.update { it.copy(scanFeedback = false) }
 

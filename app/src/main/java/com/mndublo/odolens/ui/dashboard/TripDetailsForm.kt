@@ -17,8 +17,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 
 /** "Trip Details" form: distance/economy/name/price inputs, cost preview and save action. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TripDetailsForm(
     distanceInput: String,
@@ -51,6 +54,7 @@ fun TripDetailsForm(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -128,7 +132,10 @@ fun TripDetailsForm(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onSave()
                 },
-                modifier = Modifier.fillMaxWidth(),
+                // M3 Expressive Medium tier (56dp) for the primary hero action.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ButtonDefaults.MediumContainerHeight),
                 enabled = distanceInput.isNotBlank() && economyInput.isNotBlank()
             ) {
                 Icon(Icons.Default.Check, contentDescription = null)

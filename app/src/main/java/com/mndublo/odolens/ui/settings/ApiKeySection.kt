@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +57,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ApiKeySection(
     apiKeyInput: String,
+    settingsLoaded: Boolean = true,
     onApiKeyChange: (String) -> Unit,
     focusRequester: FocusRequester? = null
 ) {
@@ -64,6 +68,7 @@ fun ApiKeySection(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -74,14 +79,14 @@ fun ApiKeySection(
                 Surface(
                     color = MaterialTheme.colorScheme.primary,
                     shape = CircleShape,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.Key,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -102,7 +107,11 @@ fun ApiKeySection(
                 }
             }
 
-            AnimatedVisibility(visible = showGuide) {
+            AnimatedVisibility(
+                visible = showGuide,
+                enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
+                    expandVertically(animationSpec = tween(durationMillis = 250))
+            ) {
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -195,8 +204,13 @@ fun ApiKeySection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Warning if missing
-            if (apiKeyInput.isBlank()) {
+            // Warning if missing — animated in so the user notices it. Gated on the
+            // settings having loaded so it doesn't flash on launch before the key arrives.
+            AnimatedVisibility(
+                visible = settingsLoaded && apiKeyInput.isBlank(),
+                enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
+                    expandVertically(animationSpec = tween(durationMillis = 250))
+            ) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier

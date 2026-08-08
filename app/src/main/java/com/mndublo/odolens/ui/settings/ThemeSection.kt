@@ -40,6 +40,7 @@ fun ThemeSection(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -47,14 +48,14 @@ fun ThemeSection(
                 Surface(
                     color = MaterialTheme.colorScheme.tertiary,
                     shape = CircleShape,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.Palette,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onTertiary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

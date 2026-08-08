@@ -125,6 +125,7 @@ fun SettingsScreen(
                 item {
                     ApiKeySection(
                         apiKeyInput = uiState.apiKeyInput,
+                        settingsLoaded = uiState.settingsLoaded,
                         onApiKeyChange = viewModel::onApiKeyChange,
                         focusRequester = focusRequester
                     )

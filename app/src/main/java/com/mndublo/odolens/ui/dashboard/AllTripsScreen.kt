@@ -115,7 +115,7 @@ fun AllTripsScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.large
             )
 
             Spacer(modifier = Modifier.height(8.dp))

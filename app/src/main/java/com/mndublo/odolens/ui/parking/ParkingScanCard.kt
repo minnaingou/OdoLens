@@ -1,5 +1,9 @@
 package com.mndublo.odolens.ui.parking
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,8 +32,9 @@ fun ParkingScanCard(
     isAiLoading: Boolean
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -43,15 +48,21 @@ fun ParkingScanCard(
                 onGallery = onGallery
             )
 
-            if (isAiLoading) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Analyzing Ticket with Gemini AI...")
+            AnimatedVisibility(
+                visible = isAiLoading,
+                enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
+                    expandVertically(animationSpec = tween(durationMillis = 250))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Analyzing Ticket with Gemini AI...")
+                    }
                 }
             }
         }

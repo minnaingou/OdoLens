@@ -17,6 +17,9 @@ import kotlinx.coroutines.launch
 
 data class SettingsUiState(
     val apiKeyInput: String = "",
+    // True once persisted settings have been read; gates the missing-key warning so it
+    // doesn't flash on launch before the real value arrives.
+    val settingsLoaded: Boolean = false,
     val use12hFormat: Boolean = false,
     val themeMode: Int = 0,
     val dynamicColor: Boolean = false,
@@ -36,7 +39,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             combine(settings.geminiApiKey, settings.use12HourFormat, settings.themeMode, settings.dynamicColor) { key, use12h, theme, dynamic ->
                 _uiState.update {
-                    it.copy(apiKeyInput = key, use12hFormat = use12h, themeMode = theme, dynamicColor = dynamic)
+                    it.copy(apiKeyInput = key, use12hFormat = use12h, themeMode = theme, dynamicColor = dynamic, settingsLoaded = true)
                 }
             }.collect { }
         }

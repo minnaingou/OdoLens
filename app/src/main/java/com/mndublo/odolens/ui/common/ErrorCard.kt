@@ -1,4 +1,4 @@
-package com.mndublo.odolens.ui.parking
+package com.mndublo.odolens.ui.common
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -36,13 +36,14 @@ import com.mndublo.odolens.R
 
 /**
  * Dismissible error card in the app's M3 Expressive language: extraLarge hero radius, tonal
- * error container, circular tonal icon chips, and a soft fade/expand entrance. Dismissing
- * clears the error via [onDismiss].
+ * error container, circular tonal icon chips, and a soft fade/expand entrance. Shared by the
+ * Dashboard and Parking screens; dismissing clears the error via [onDismiss].
  */
 @Composable
-fun ParkingErrorCard(
+fun ErrorCard(
     errorMessage: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     // The card is added to the list when an error appears; M3 Expressive surfaces move in
     // rather than popping in, so start hidden and animate to visible one frame later.
@@ -59,7 +60,7 @@ fun ParkingErrorCard(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
             shape = MaterialTheme.shapes.extraLarge,
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = modifier.fillMaxWidth()
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -95,7 +96,7 @@ fun ParkingErrorCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.parking_error_dismiss),
+                        contentDescription = stringResource(R.string.error_dismiss),
                         tint = onContainer
                     )
                 }

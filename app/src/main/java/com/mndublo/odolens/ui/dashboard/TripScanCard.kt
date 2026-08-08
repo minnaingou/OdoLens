@@ -1,5 +1,9 @@
 package com.mndublo.odolens.ui.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,18 +24,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mndublo.odolens.ui.common.ImageSourceButtons
 
-/** "Log New Trip" card: camera/gallery pickers plus scan progress and errors. */
+/** "Log New Trip" card: camera/gallery pickers plus scan progress. */
 @Composable
 fun TripScanCard(
     onCamera: () -> Unit,
     onGallery: () -> Unit,
     isLoading: Boolean,
-    statusMessage: String?,
-    errorMessage: String?
+    statusMessage: String?
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -45,25 +49,22 @@ fun TripScanCard(
                 onGallery = onGallery
             )
 
-            if (isLoading) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(statusMessage ?: "Processing...")
+            AnimatedVisibility(
+                visible = isLoading,
+                enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
+                    expandVertically(animationSpec = tween(durationMillis = 250))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(statusMessage ?: "Processing...")
+                    }
                 }
-            }
-
-            errorMessage?.let { error ->
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
             }
         }
     }

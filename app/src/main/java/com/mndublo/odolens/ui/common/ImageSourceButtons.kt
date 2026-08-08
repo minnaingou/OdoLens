@@ -4,11 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -21,6 +24,7 @@ import androidx.compose.ui.unit.dp
  * Row of "Camera" / "Gallery" buttons used to pick the image source for a scan.
  * Shared by the Dashboard (trip scan) and Parking (ticket scan) screens.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ImageSourceButtons(
     onCamera: () -> Unit,
@@ -33,7 +37,10 @@ fun ImageSourceButtons(
     ) {
         Button(
             onClick = onCamera,
-            modifier = Modifier.weight(1f)
+            // M3 Expressive Medium tier (56dp) for the primary hero action.
+            modifier = Modifier
+                .weight(1f)
+                .height(ButtonDefaults.MediumContainerHeight)
         ) {
             Icon(Icons.Default.CameraAlt, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -41,7 +48,9 @@ fun ImageSourceButtons(
         }
         FilledTonalButton(
             onClick = onGallery,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .height(ButtonDefaults.MediumContainerHeight)
         ) {
             Icon(Icons.Default.PhotoLibrary, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))

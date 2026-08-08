@@ -17,8 +17,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,6 +47,7 @@ import androidx.core.content.ContextCompat
  * ([promptDone]), notifications don't apply (Android 12 and below), or the
  * permission is already granted — so it only ever shows once.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NotificationPermissionScreen(
     onDone: () -> Unit,
@@ -133,6 +136,7 @@ fun NotificationPermissionScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     ),
+                    shape = MaterialTheme.shapes.extraLarge,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -155,7 +159,10 @@ fun NotificationPermissionScreen(
 
                 Button(
                     onClick = onDone,
-                    modifier = Modifier.fillMaxWidth()
+                    // M3 Expressive Medium tier (56dp) for the primary hero action.
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ButtonDefaults.MediumContainerHeight)
                 ) {
                     Text("Continue")
                 }
@@ -164,7 +171,9 @@ fun NotificationPermissionScreen(
                     onClick = {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ButtonDefaults.MediumContainerHeight)
                 ) {
                     Icon(Icons.Default.Notifications, contentDescription = null)
                     Spacer(modifier = Modifier.size(8.dp))

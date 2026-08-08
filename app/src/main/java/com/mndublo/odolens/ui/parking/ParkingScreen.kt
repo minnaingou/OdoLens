@@ -7,8 +7,11 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
@@ -25,12 +28,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -52,7 +52,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mndublo.odolens.ui.common.ErrorCard
 import com.mndublo.odolens.ui.common.ScanCameraOverlay
+import com.mndublo.odolens.ui.common.ScanFab
 import com.mndublo.odolens.ui.common.loadBitmapFromUri
 import com.mndublo.odolens.ui.common.rememberFabVisibility
 import kotlinx.coroutines.launch
@@ -179,20 +181,13 @@ fun ParkingScreen(
             if (!showCamera && !uiState.isTimerRunning) {
                 AnimatedVisibility(
                     visible = isFabVisible,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn() +
+                        scaleIn(initialScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
-                    ExtendedFloatingActionButton(
-                        onClick = { showCamera = true },
-                        icon = { Icon(Icons.Default.CameraAlt, contentDescription = "Camera") },
-                        text = { Text(stringResource(com.mndublo.odolens.R.string.parking_fab_scan)) },
-                        shape = MaterialTheme.shapes.extraLarge,
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = 6.dp,
-                            pressedElevation = 8.dp
-                        )
+                    ScanFab(
+                        text = stringResource(com.mndublo.odolens.R.string.parking_fab_scan),
+                        onClick = { showCamera = true }
                     )
                 }
             }
@@ -208,7 +203,7 @@ fun ParkingScreen(
                     .fillMaxSize()
                     .padding(horizontal = 8.dp)
             ) {
-                if (uiState.apiKey.isBlank()) {
+                if (uiState.settingsLoaded && uiState.apiKey.isBlank()) {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                         modifier = Modifier
@@ -250,10 +245,13 @@ fun ParkingScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     uiState.errorMessage?.let { error ->
-                        item {
-                            ParkingErrorCard(
+                        item(key = "parkingError") {
+                            ErrorCard(
                                 errorMessage = error,
-                                onDismiss = viewModel::clearErrorMessage
+                                onDismiss = viewModel::clearErrorMessage,
+                                // Keyed + animateItem so dismissal animates the card out
+                                // instead of the list jumping.
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }

@@ -36,6 +36,7 @@ fun FormatSection(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -43,14 +44,14 @@ fun FormatSection(
                 Surface(
                     color = MaterialTheme.colorScheme.secondary,
                     shape = CircleShape,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Default.AccessTime,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSecondary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }

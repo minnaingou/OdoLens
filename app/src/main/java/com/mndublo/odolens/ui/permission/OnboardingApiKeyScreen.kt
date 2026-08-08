@@ -21,8 +21,10 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 /**
  * Onboarding card explaining why Gemini API key is needed and guiding the user to create one.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun OnboardingApiKeyScreen(
     onDone: (openSettings: Boolean) -> Unit
@@ -107,6 +110,7 @@ fun OnboardingApiKeyScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 ),
+                shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -137,7 +141,9 @@ fun OnboardingApiKeyScreen(
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/api-keys"))
                         context.startActivity(intent)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ButtonDefaults.MediumContainerHeight)
                 ) {
                     Icon(Icons.Default.OpenInNew, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -148,14 +154,18 @@ fun OnboardingApiKeyScreen(
 
                 OutlinedButton(
                     onClick = { onDone(true) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ButtonDefaults.MediumContainerHeight)
                 ) {
                     Text("I Already Have a Key → Go to Settings")
                 }
             } else {
                 Button(
                     onClick = { onDone(true) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ButtonDefaults.MediumContainerHeight)
                 ) {
                     Icon(Icons.Default.ArrowForward, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -169,7 +179,9 @@ fun OnboardingApiKeyScreen(
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/api-keys"))
                         context.startActivity(intent)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ButtonDefaults.MediumContainerHeight)
                 ) {
                     Icon(Icons.Default.OpenInNew, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))

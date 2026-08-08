@@ -1,5 +1,9 @@
 package com.mndublo.odolens.ui.parking
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
@@ -65,6 +70,7 @@ fun ParkingFormSection(
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -218,8 +224,9 @@ fun AlertOffsetSection(
     )
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -238,7 +245,24 @@ fun AlertOffsetSection(
                     FilterChip(
                         selected = isSelected,
                         onClick = { onOffsetSelected(option.second) },
-                        label = { Text(option.first) }
+                        label = { Text(option.first) },
+                        // Share the same background as the quick-start preset pills — including
+                        // the selected state — so selection is shown by the check icon only.
+                        leadingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedContainerColor = MaterialTheme.colorScheme.surface,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
                 }
             }
@@ -251,26 +275,66 @@ fun AlertOffsetSection(
                     FilterChip(
                         selected = isSelected,
                         onClick = { onOffsetSelected(option.second) },
-                        label = { Text(option.first) }
+                        label = { Text(option.first) },
+                        // Share the same background as the quick-start preset pills — including
+                        // the selected state — so selection is shown by the check icon only.
+                        leadingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedContainerColor = MaterialTheme.colorScheme.surface,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
                 }
 
                 FilterChip(
                     selected = isCustomOffsetSelected,
                     onClick = onCustomOffsetSelected,
-                    label = { Text("Custom Minutes") }
+                    label = { Text("Custom Minutes") },
+                    // Share the same background as the quick-start preset pills — including
+                    // the selected state — so selection is shown by the check icon only.
+                    leadingIcon = if (isCustomOffsetSelected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                        }
+                    } else null,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        selectedContainerColor = MaterialTheme.colorScheme.surface,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             }
 
-            if (isCustomOffsetSelected) {
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = customOffsetInput,
-                    onValueChange = onCustomOffsetInput,
-                    label = { Text("Warning Offset (Minutes)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            AnimatedVisibility(
+                visible = isCustomOffsetSelected,
+                enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
+                    expandVertically(animationSpec = tween(durationMillis = 250))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = customOffsetInput,
+                        onValueChange = onCustomOffsetInput,
+                        label = { Text("Warning Offset (Minutes)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
 

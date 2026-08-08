@@ -2,6 +2,7 @@ package com.mndublo.odolens.ui.common
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,11 @@ fun ScanCameraOverlay(
     onClose: () -> Unit
 ) {
     if (!visible) return
+
+    // System back closes the camera and returns to the app screen instead of
+    // finishing the activity (which would quit the app). Only composed while
+    // the overlay is visible, so normal back navigation is unaffected otherwise.
+    BackHandler { onClose() }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
