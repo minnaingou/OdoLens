@@ -252,6 +252,7 @@ fun ParkingScreen(
                                 calculatedExpiry = uiState.calculatedExpiry,
                                 scheduledAlarmTime = uiState.scheduledAlarmTime,
                                 parkingSpotNote = uiState.parkingSpotNoteInput,
+                                progressFraction = uiState.timerProgressFraction,
                                 onExtend = { showExtendSheet = true },
                                 onReset = { viewModel.resetTimer() }
                             )

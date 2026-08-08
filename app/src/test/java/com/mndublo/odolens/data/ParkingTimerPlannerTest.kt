@@ -80,4 +80,51 @@ class ParkingTimerPlannerTest {
         assertEquals("2:30 PM", ParkingTimerPlanner.formatExpiryDisplay("13:30", 60, use12h = true))
         assertEquals("12:05 AM", ParkingTimerPlanner.formatExpiryDisplay("23:05", 60, use12h = true))
     }
+
+    @Test
+    fun `remainingFraction depletes from 1 to 0 across the window`() {
+        val expiry = 3_600_000L
+        val total = 3_600_000L
+        assertEquals(1f, ParkingTimerPlanner.remainingFraction(expiry, total, 0L))
+        assertEquals(0.5f, ParkingTimerPlanner.remainingFraction(expiry, total, 1_800_000L), 0.001f)
+        assertEquals(0f, ParkingTimerPlanner.remainingFraction(expiry, total, expiry))
+    }
+
+    @Test
+    fun `remainingFraction clamps past-expiry and inactive timers`() {
+        val expiry = 3_600_000L
+        val total = 3_600_000L
+        // After expiry it never goes negative
+        assertEquals(0f, ParkingTimerPlanner.remainingFraction(expiry, total, expiry + 10_000L))
+        // No timer or no duration -> full ring
+        assertEquals(1f, ParkingTimerPlanner.remainingFraction(0L, total, 0L))
+        assertEquals(1f, ParkingTimerPlanner.remainingFraction(expiry, 0L, 0L))
+    }
+
+    @Test
+    fun `countdownTotalMs prefers the free duration`() {
+        val expiry = 3_600_000L
+        assertEquals(
+            3_600_000L,
+            ParkingTimerPlanner.countdownTotalMs(freeDurationMinutes = 60, startTime = "09:00", expiryMs = expiry)
+        )
+    }
+
+    @Test
+    fun `countdownTotalMs falls back to start-of-day window for legacy timers`() {
+        val cal = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 9)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val expiry = cal.timeInMillis + 60 * 60_000L
+        assertEquals(
+            60 * 60_000L,
+            ParkingTimerPlanner.countdownTotalMs(freeDurationMinutes = 0, startTime = "09:00", expiryMs = expiry)
+        )
+        // Garbage start time or no expiry -> unknown window (0)
+        assertEquals(0L, ParkingTimerPlanner.countdownTotalMs(0, "nope", expiry))
+        assertEquals(0L, ParkingTimerPlanner.countdownTotalMs(0, "09:00", 0L))
+    }
 }

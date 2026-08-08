@@ -284,6 +284,24 @@ class ParkingViewModelTest {
     }
 
     @Test
+    fun `progress fraction recomputes when the free duration lands after expiry`() = runTest {
+        val f = fixture()
+        // Expiry arrives before the persisted free duration (separate settings flows).
+        f.settings.expiryFlow.value = System.currentTimeMillis() + 30 * 60_000L
+        // Zero duration -> no window -> full ring.
+        assertEquals(1f, f.vm.uiState.value.timerProgressFraction)
+
+        // Duration lands: 30 min remaining of a 60 min window -> ~0.5 remaining.
+        f.settings.freeFlow.value = 60
+        val fraction = f.vm.uiState.value.timerProgressFraction
+        assertTrue(
+            "expected ~0.5 remaining, was $fraction",
+            fraction in 0.4f..0.6f
+        )
+        f.vm.viewModelScope.cancel()
+    }
+
+    @Test
     fun `offset selection persists`() = runTest {
         val f = fixture()
         f.vm.onOffsetSelected(30)

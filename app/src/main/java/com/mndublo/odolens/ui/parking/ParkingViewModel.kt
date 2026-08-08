@@ -43,6 +43,8 @@ data class ParkingUiState(
     val isAiLoading: Boolean = false,
     val errorMessage: String? = null,
     val countdownText: String = "",
+    /** Remaining fraction of the free-parking window (1.0 → 0.0), refreshed by the countdown ticker. */
+    val timerProgressFraction: Float = 1f,
     // One-shot UI feedback flags, consumed by the screen
     val alarmJustScheduled: Boolean = false,
     val scheduleFailed: Boolean = false,
@@ -130,17 +132,25 @@ class ParkingViewModel(
 
         // Live countdown ticker while a timer is active.
         viewModelScope.launch {
-            _uiState.map { it.expiryMs to it.isTimerRunning }
+            _uiState.map { Triple(it.expiryMs, it.isTimerRunning, it.freeDurationMinutes) }
                 .distinctUntilChanged()
-                .collect { (expiry, running) ->
+                .collect { (expiry, running, _) ->
                     countdownJob?.cancel()
                     if (running && expiry > 0L) {
                         countdownJob = viewModelScope.launch {
                             while (isActive) {
-                                _uiState.update {
-                                    it.copy(
-                                        countdownText = ParkingTimerPlanner.formatCountdown(
-                                            expiry - System.currentTimeMillis()
+                                val now = System.currentTimeMillis()
+                                _uiState.update { st ->
+                                    st.copy(
+                                        countdownText = ParkingTimerPlanner.formatCountdown(expiry - now),
+                                        timerProgressFraction = ParkingTimerPlanner.remainingFraction(
+                                            expiryMs = expiry,
+                                            totalMs = ParkingTimerPlanner.countdownTotalMs(
+                                                freeDurationMinutes = st.freeDurationMinutes,
+                                                startTime = st.startTime,
+                                                expiryMs = expiry
+                                            ),
+                                            nowMs = now
                                         )
                                     )
                                 }
@@ -148,7 +158,7 @@ class ParkingViewModel(
                             }
                         }
                     } else {
-                        _uiState.update { it.copy(countdownText = "") }
+                        _uiState.update { it.copy(countdownText = "", timerProgressFraction = 1f) }
                     }
                 }
         }
@@ -258,6 +268,7 @@ class ParkingViewModel(
             _uiState.update {
                 it.copy(
                     countdownText = "",
+                    timerProgressFraction = 1f,
                     startTimeInput = "00:00",
                     freeDurationInput = "0",
                     parkingSpotNoteInput = "",
