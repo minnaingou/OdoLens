@@ -148,20 +148,6 @@ fun SettingsScreen(
                     )
                 }
 
-                // Save Action
-                item {
-                    Button(
-                        onClick = { viewModel.saveAll() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(com.mndublo.odolens.R.string.settings_save_button))
-                    }
-                }
-
                 // Section 4: Debug Logs (Debug Menu)
                 item {
                     DebugSection()

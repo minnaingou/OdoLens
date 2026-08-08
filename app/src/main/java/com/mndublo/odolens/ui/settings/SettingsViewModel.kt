@@ -42,7 +42,10 @@ class SettingsViewModel(
         }
     }
 
-    fun onApiKeyChange(value: String) = _uiState.update { it.copy(apiKeyInput = value) }
+    fun onApiKeyChange(value: String) {
+        _uiState.update { it.copy(apiKeyInput = value) }
+        viewModelScope.launch { settings.saveGeminiApiKey(value) }
+    }
 
     /** Persists immediately, matching the old chip behavior. */
     fun onUse12hChange(value: Boolean) {
