@@ -64,7 +64,8 @@ fun ParkingScreen(
     openExtendSheet: Boolean = false,
     onExtendSheetOpened: () -> Unit = {},
     autoScan: Boolean = false,
-    onAutoScanHandled: () -> Unit = {}
+    onAutoScanHandled: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -212,20 +213,29 @@ fun ParkingScreen(
                         shape = MaterialTheme.shapes.large
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = "Warning",
-                                tint = MaterialTheme.colorScheme.onErrorContainer
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = stringResource(com.mndublo.odolens.R.string.parking_no_api_key_warning),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.weight(1f)
                             )
+                            androidx.compose.material3.TextButton(
+                                onClick = { onNavigateToSettings() }
+                            ) {
+                                Text("Set up →", color = MaterialTheme.colorScheme.onErrorContainer)
+                            }
                         }
                     }
                 }

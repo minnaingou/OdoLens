@@ -132,7 +132,11 @@ fun MainScreen(
                         openExtendSheet = openExtendSheet,
                         onExtendSheetOpened = onExtendSheetOpened,
                         autoScan = autoScanTarget == "parking",
-                        onAutoScanHandled = onAutoScanHandled
+                        onAutoScanHandled = onAutoScanHandled,
+                        onNavigateToSettings = {
+                            selectedTab = 2
+                            scrollToApiKey = true
+                        }
                     )
                     2 -> SettingsScreen(
                         scrollToApiKey = scrollToApiKey,

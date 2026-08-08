@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -139,25 +141,47 @@ fun ApiKeySection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            var isKeyVisible by remember { mutableStateOf(false) }
+
             OutlinedTextField(
                 value = apiKeyInput,
                 onValueChange = onApiKeyChange,
                 label = { Text(stringResource(com.mndublo.odolens.R.string.settings_ai_key_label)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = if (isKeyVisible) {
+                    androidx.compose.ui.text.input.VisualTransformation.None
+                } else {
+                    androidx.compose.ui.text.input.PasswordVisualTransformation('*')
+                },
                 trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            val clip = clipboardManager.getText()
-                            if (clip != null) {
-                                onApiKeyChange(clip.text)
-                            }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { isKeyVisible = !isKeyVisible }
+                        ) {
+                            Icon(
+                                imageVector = if (isKeyVisible) {
+                                    Icons.Default.VisibilityOff
+                                } else {
+                                    Icons.Default.Visibility
+                                },
+                                contentDescription = if (isKeyVisible) "Hide API Key" else "Show API Key",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    ) {
-                        Icon(
-                            Icons.Default.ContentPaste,
-                            contentDescription = "Paste from clipboard",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        IconButton(
+                            onClick = {
+                                val clip = clipboardManager.getText()
+                                if (clip != null) {
+                                    onApiKeyChange(clip.text)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.ContentPaste,
+                                contentDescription = "Paste from clipboard",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 },
                 modifier = Modifier
