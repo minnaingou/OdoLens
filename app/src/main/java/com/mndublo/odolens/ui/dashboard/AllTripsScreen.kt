@@ -160,7 +160,8 @@ fun AllTripsScreen(
                             positionalThreshold = { totalDistance -> totalDistance * 0.5f }
                         )
 
-                        // Haptic feedback right as the swipe passes the 50% threshold in either direction
+                        // Haptic feedback when the swipe settles into a dismissed direction (delete completes).
+                        // targetValue only changes after release, so this fires on delete completion, not mid-swipe.
                         LaunchedEffect(dismissState.targetValue) {
                             if (dismissState.targetValue != SwipeToDismissBoxValue.Settled) {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
