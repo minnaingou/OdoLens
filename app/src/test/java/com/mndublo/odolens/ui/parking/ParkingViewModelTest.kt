@@ -30,6 +30,8 @@ internal class FakeParkingSettings : ParkingSettingsSource {
     val startFlow = MutableStateFlow("")
     val freeFlow = MutableStateFlow(0)
     val offsetFlow = MutableStateFlow(60)
+    val directoryFlow = MutableStateFlow<List<com.mndublo.odolens.data.ParkingPlace>>(emptyList())
+    val expiredFlow = MutableStateFlow(false)
 
     var savedOffsetMinutes: Int? = null
     var savedTimer: SavedTimer? = null
@@ -53,10 +55,20 @@ internal class FakeParkingSettings : ParkingSettingsSource {
     override val parkingStartTime: Flow<String> get() = startFlow
     override val parkingFreeDuration: Flow<Int> get() = freeFlow
     override val parkingOffsetMinutes: Flow<Int> get() = offsetFlow
+    override val parkingPlaceDirectory: Flow<List<com.mndublo.odolens.data.ParkingPlace>> get() = directoryFlow
+    override val parkingIsExpired: Flow<Boolean> get() = expiredFlow
 
     override suspend fun saveNotificationOffsetMinutes(minutes: Int) {
         savedOffsetMinutes = minutes
         offsetFlow.value = minutes
+    }
+
+    override suspend fun saveParkingPlaceDirectory(places: List<com.mndublo.odolens.data.ParkingPlace>) {
+        directoryFlow.value = places
+    }
+
+    override suspend fun setParkingExpired(expired: Boolean) {
+        expiredFlow.value = expired
     }
 
     override suspend fun saveParkingTimer(
@@ -74,6 +86,7 @@ internal class FakeParkingSettings : ParkingSettingsSource {
         startFlow.value = startTime
         freeFlow.value = freeDurationMinutes
         offsetFlow.value = offsetMinutes
+        expiredFlow.value = false
     }
 
     override suspend fun clearParkingTimer() {
@@ -84,6 +97,7 @@ internal class FakeParkingSettings : ParkingSettingsSource {
         startFlow.value = ""
         freeFlow.value = 0
         offsetFlow.value = 60
+        expiredFlow.value = false
     }
 }
 
@@ -187,6 +201,7 @@ class ParkingViewModelTest {
         val f = fixture()
         f.vm.onStartTimeChange("09:30")
         f.vm.onFreeDurationChange("60")
+        f.vm.onOffsetSelected(30)
         f.vm.onSpotNoteChange("2F 21")
 
         f.vm.scheduleAlarm()
@@ -197,13 +212,28 @@ class ParkingViewModelTest {
             assertEquals("09:30", it.startTime)
             assertEquals(60, it.freeDurationMinutes)
             assertEquals("2F 21", it.spotNote)
-            assertEquals(60, it.offsetMinutes)
+            assertEquals(30, it.offsetMinutes)
             assertTrue(it.expiryMs > 0L)
         }
         assertTrue(f.scheduler.scheduled)
-        assertEquals(1, f.scheduler.instantConfirmations)
         assertTrue(f.vm.uiState.value.alarmJustScheduled)
         assertEquals(null, f.vm.uiState.value.errorMessage)
+        f.vm.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `scheduleAlarm with offset greater than or equal to free duration shows error`() = runTest {
+        val f = fixture()
+        f.vm.onStartTimeChange("09:30")
+        f.vm.onFreeDurationChange("30")
+        f.vm.onOffsetSelected(45)
+
+        f.vm.scheduleAlarm()
+
+        assertTrue(f.vm.uiState.value.scheduleFailed)
+        assertNotNull(f.vm.uiState.value.errorMessage)
+        assertTrue(f.vm.uiState.value.errorMessage.orEmpty().contains("must be less than free parking duration"))
+        assertFalse(f.scheduler.scheduled)
         f.vm.viewModelScope.cancel()
     }
 
@@ -212,6 +242,7 @@ class ParkingViewModelTest {
         val f = fixture(scheduler = ThrowingScheduler())
         f.vm.onStartTimeChange("09:30")
         f.vm.onFreeDurationChange("60")
+        f.vm.onOffsetSelected(15)
         f.vm.scheduleAlarm()
 
         assertTrue(f.vm.uiState.value.scheduleFailed)
@@ -226,6 +257,7 @@ class ParkingViewModelTest {
         val f = fixture(nowMs = System.currentTimeMillis())
         f.vm.onQuickStart(30)
         f.vm.onFreeDurationChange("30")
+        f.vm.onOffsetSelected(15)
 
         f.vm.scheduleAlarm()
 
@@ -337,6 +369,34 @@ class ParkingViewModelTest {
         assertEquals(30, f.settings.savedOffsetMinutes)
         assertEquals(30, f.vm.uiState.value.warningOffsetMinutes)
         assertFalse(f.vm.uiState.value.isCustomOffsetSelected)
+        f.vm.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `timer past expiry marks isExpired and computes expiredAgoText`() = runTest {
+        val f = fixture()
+        // Expired 5 minutes ago on the same day
+        f.settings.expiryFlow.value = f.nowMs - 5 * 60_000L
+        f.settings.startFlow.value = "10:00"
+        f.settings.freeFlow.value = 60
+
+        assertTrue(f.vm.uiState.value.isExpired)
+        assertFalse(f.vm.uiState.value.isTimerRunning)
+        assertEquals("5m 00s", f.vm.uiState.value.expiredAgoText)
+        f.vm.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `stale expired session auto resets to clean form`() = runTest {
+        val f = fixture()
+        // Expired 2 days ago
+        f.settings.expiryFlow.value = f.nowMs - 2 * 24 * 3600_000L
+        f.settings.startFlow.value = "10:00"
+        f.settings.freeFlow.value = 60
+
+        assertFalse(f.vm.uiState.value.isExpired)
+        assertFalse(f.vm.uiState.value.isTimerRunning)
+        assertTrue(f.settings.cleared)
         f.vm.viewModelScope.cancel()
     }
 }

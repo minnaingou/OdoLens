@@ -18,8 +18,9 @@ object ParkingTimerPlanner {
 
     /**
      * Validates a parking schedule against [now]. Returns a user-facing error message when the
-     * schedule cannot be honoured — malformed start time, non-positive free duration, or the free
-     * window has already elapsed (expiry is in the past) — or null when it is schedulable.
+     * schedule cannot be honoured — malformed start time, non-positive free duration, warning offset
+     * greater than or equal to free duration, or the free window has already elapsed (expiry is in
+     * the past) — or null when it is schedulable.
      *
      * There is deliberately no next-day roll here: a window whose expiry already passed is an
      * error, never a silently scheduled ~24h timer.
@@ -27,6 +28,7 @@ object ParkingTimerPlanner {
     fun validateSchedule(
         startTime: String,
         freeMinutes: Int,
+        offsetMinutes: Int = 0,
         now: Long = System.currentTimeMillis()
     ): String? {
         val parts = startTime.split(":")
@@ -34,6 +36,9 @@ object ParkingTimerPlanner {
         val minute = parts.getOrNull(1)?.toIntOrNull() ?: return "Enter a valid start time (HH:mm)"
         if (hour !in 0..23 || minute !in 0..59) return "Enter a valid start time (HH:mm)"
         if (freeMinutes <= 0) return "Free duration must be greater than 0 minutes"
+        if (offsetMinutes >= freeMinutes) {
+            return "Alert offset ($offsetMinutes mins) must be less than free parking duration ($freeMinutes mins)"
+        }
         val expiry = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
@@ -132,5 +137,39 @@ object ParkingTimerPlanner {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
         return (expiryMs - startToday).coerceAtLeast(0L)
+    }
+
+    /**
+     * Formats elapsed time since expiration: e.g. "12m 34s", "1h 20m", or "< 1m".
+     */
+    fun formatExpiredDuration(elapsedMs: Long): String {
+        if (elapsedMs <= 0) return "< 1m"
+        val totalSec = elapsedMs / 1000
+        val hours = totalSec / 3600
+        val mins = (totalSec % 3600) / 60
+        val secs = totalSec % 60
+        return when {
+            hours > 0 -> String.format(Locale.getDefault(), "%dh %02dm", hours, mins)
+            mins > 0 -> String.format(Locale.getDefault(), "%dm %02ds", mins, secs)
+            else -> String.format(Locale.getDefault(), "%ds", secs)
+        }
+    }
+
+    /**
+     * Determines whether an expired parking session is stale (e.g. occurred on a prior
+     * calendar day or >24 hours ago), in which case it should be auto-cleared.
+     */
+    fun isStaleExpired(expiryMs: Long, nowMs: Long): Boolean {
+        if (expiryMs <= 0L) return false
+        if (nowMs < expiryMs) return false
+        // > 24 hours is always stale
+        if (nowMs - expiryMs >= 24 * 3600_000L) return true
+
+        val expiryCal = Calendar.getInstance().apply { timeInMillis = expiryMs }
+        val nowCal = Calendar.getInstance().apply { timeInMillis = nowMs }
+
+        // Stale if on different calendar day (year or day of year differs)
+        return expiryCal.get(Calendar.YEAR) != nowCal.get(Calendar.YEAR) ||
+                expiryCal.get(Calendar.DAY_OF_YEAR) != nowCal.get(Calendar.DAY_OF_YEAR)
     }
 }

@@ -169,16 +169,18 @@ fun ParkingScreen(
 
     val isFabVisible by rememberFabVisibility(listState)
 
-    // Scroll to top when timer starts so the countdown card is immediately visible
-    LaunchedEffect(uiState.isTimerRunning) {
-        if (uiState.isTimerRunning) {
+    // Scroll to top when timer starts or expires so the card is immediately visible
+    LaunchedEffect(uiState.isTimerRunning, uiState.isExpired) {
+        if (uiState.isTimerRunning || uiState.isExpired) {
             listState.animateScrollToItem(0)
         }
     }
 
+    val showActiveOrExpiredCard = uiState.isTimerRunning || uiState.isExpired
+
     Scaffold(
         floatingActionButton = {
-            if (!showCamera && !uiState.isTimerRunning) {
+            if (!showCamera && !showActiveOrExpiredCard) {
                 AnimatedVisibility(
                     visible = isFabVisible,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn() +
@@ -257,13 +259,15 @@ fun ParkingScreen(
                     }
 
                     item {
-                        if (uiState.isTimerRunning) {
+                        if (showActiveOrExpiredCard) {
                             ParkingTimerCard(
                                 countdownText = uiState.countdownText,
                                 calculatedExpiry = uiState.calculatedExpiry,
                                 scheduledAlarmTime = uiState.scheduledAlarmTime,
                                 parkingSpotNote = uiState.parkingSpotNoteInput,
                                 progressFraction = uiState.timerProgressFraction,
+                                isExpired = uiState.isExpired,
+                                expiredAgoText = uiState.expiredAgoText,
                                 onExtend = { showExtendSheet = true },
                                 onReset = { viewModel.resetTimer() }
                             )
@@ -276,7 +280,7 @@ fun ParkingScreen(
                         }
                     }
 
-                    if (!uiState.isTimerRunning) {
+                    if (!showActiveOrExpiredCard) {
                         item {
                             ParkingFormSection(
                                 startTimeInput = uiState.startTimeInput,
@@ -296,10 +300,11 @@ fun ParkingScreen(
                         }
                     }
 
-                    if (!uiState.isTimerRunning) {
+                    if (!showActiveOrExpiredCard) {
                         item {
                             AlertOffsetSection(
                                 warningOffsetMinutes = uiState.warningOffsetMinutes,
+                                freeDurationMinutes = uiState.freeDurationInput.toIntOrNull() ?: 0,
                                 isCustomOffsetSelected = uiState.isCustomOffsetSelected,
                                 customOffsetInput = uiState.customOffsetInput,
                                 onOffsetSelected = viewModel::onOffsetSelected,

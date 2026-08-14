@@ -3,6 +3,7 @@ package com.mndublo.odolens.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -23,9 +24,9 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
         private val FUEL_PRICE_DATE = stringPreferencesKey("fuel_price_date")
         private val GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
         private val NOTIFICATION_OFFSET_MINUTES = intPreferencesKey("notification_offset_minutes")
-        private val USE_12_HOUR_FORMAT = androidx.datastore.preferences.core.booleanPreferencesKey("use_12_hour_format")
+        private val USE_12_HOUR_FORMAT = booleanPreferencesKey("use_12_hour_format")
         private val THEME_MODE = intPreferencesKey("theme_mode") // 0 = System, 1 = Light, 2 = Dark
-        private val DYNAMIC_COLOR = androidx.datastore.preferences.core.booleanPreferencesKey("dynamic_color")
+        private val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         // Parking timer persistence — survives tab switches
         private val PARKING_EXPIRY_MS = longPreferencesKey("parking_expiry_ms")
         private val PARKING_ALARM_TIME = stringPreferencesKey("parking_alarm_time")
@@ -33,8 +34,9 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
         private val PARKING_START_TIME = stringPreferencesKey("parking_start_time")
         private val PARKING_FREE_DURATION = intPreferencesKey("parking_free_duration")
         private val PARKING_OFFSET_MINUTES = intPreferencesKey("parking_offset_minutes_snapshot")
+        private val PARKING_IS_EXPIRED = booleanPreferencesKey("parking_is_expired")
         // First-launch notification permission prompt — shown only once
-        private val NOTIFICATION_PROMPT_DONE = androidx.datastore.preferences.core.booleanPreferencesKey("notification_prompt_done")
+        private val NOTIFICATION_PROMPT_DONE = booleanPreferencesKey("notification_prompt_done")
         // Parking place directory — user-managed list of named places with free hours
         private val PARKING_PLACE_DIRECTORY = stringPreferencesKey("parking_place_directory")
     }
@@ -94,6 +96,10 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
 
     override val parkingPlaceDirectory: Flow<List<ParkingPlace>> = context.settingsDataStore.data.map { preferences ->
         ParkingPlaceSerializer.decode(preferences[PARKING_PLACE_DIRECTORY] ?: "")
+    }
+
+    override val parkingIsExpired: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[PARKING_IS_EXPIRED] ?: false
     }
 
     // Whether the first-launch notification permission prompt has been shown
@@ -164,6 +170,12 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
         }
     }
 
+    override suspend fun setParkingExpired(expired: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PARKING_IS_EXPIRED] = expired
+        }
+    }
+
     override suspend fun saveParkingTimer(
         expiryMs: Long,
         alarmTime: String,
@@ -179,6 +191,7 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
             preferences[PARKING_START_TIME] = startTime
             preferences[PARKING_FREE_DURATION] = freeDurationMinutes
             preferences[PARKING_OFFSET_MINUTES] = offsetMinutes
+            preferences[PARKING_IS_EXPIRED] = false
         }
     }
 
@@ -191,6 +204,7 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
             preferences[PARKING_START_TIME] = ""
             preferences[PARKING_FREE_DURATION] = 0
             preferences[PARKING_OFFSET_MINUTES] = 60
+            preferences[PARKING_IS_EXPIRED] = false
         }
     }
 }

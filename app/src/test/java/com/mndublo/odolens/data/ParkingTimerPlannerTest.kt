@@ -55,7 +55,26 @@ class ParkingTimerPlannerTest {
             set(java.util.Calendar.SECOND, 0)
             set(java.util.Calendar.MILLISECOND, 0)
         }.timeInMillis
-        assertNull(ParkingTimerPlanner.validateSchedule("16:00", 60, now = now))
+        assertNull(ParkingTimerPlanner.validateSchedule("16:00", 60, offsetMinutes = 30, now = now))
+    }
+
+    @Test
+    fun `validateSchedule rejects alert offset greater than or equal to free duration`() {
+        val now = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 15)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        // 30 min duration with 45 min offset -> rejected
+        val error = ParkingTimerPlanner.validateSchedule("16:00", 30, offsetMinutes = 45, now = now)
+        assertNotNull(error)
+        assertTrue(error.orEmpty().contains("must be less than free parking duration"))
+
+        // 30 min duration with 30 min offset -> rejected
+        val errorEqual = ParkingTimerPlanner.validateSchedule("16:00", 30, offsetMinutes = 30, now = now)
+        assertNotNull(errorEqual)
+        assertTrue(errorEqual.orEmpty().contains("must be less than free parking duration"))
     }
 
     @Test
@@ -177,5 +196,45 @@ class ParkingTimerPlannerTest {
         // Garbage start time or no expiry -> unknown window (0)
         assertEquals(0L, ParkingTimerPlanner.countdownTotalMs(0, "nope", expiry))
         assertEquals(0L, ParkingTimerPlanner.countdownTotalMs(0, "09:00", 0L))
+    }
+
+    @Test
+    fun `formatExpiredDuration formats seconds minutes hours`() {
+        assertEquals("< 1m", ParkingTimerPlanner.formatExpiredDuration(0L))
+        assertEquals("45s", ParkingTimerPlanner.formatExpiredDuration(45_000L))
+        assertEquals("12m 34s", ParkingTimerPlanner.formatExpiredDuration((12 * 60 + 34) * 1000L))
+        assertEquals("1h 05m", ParkingTimerPlanner.formatExpiredDuration((65 * 60) * 1000L))
+    }
+
+    @Test
+    fun `isStaleExpired returns false for active or same-day recent expiry`() {
+        val now = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 14)
+            set(java.util.Calendar.MINUTE, 0)
+        }.timeInMillis
+
+        val futureExpiry = now + 3600_000L
+        org.junit.Assert.assertFalse(ParkingTimerPlanner.isStaleExpired(futureExpiry, now))
+
+        val sameDayPastExpiry = now - 3600_000L // 1 hour ago same day
+        org.junit.Assert.assertFalse(ParkingTimerPlanner.isStaleExpired(sameDayPastExpiry, now))
+    }
+
+    @Test
+    fun `isStaleExpired returns true for previous day or older expiry`() {
+        val now = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 9)
+            set(java.util.Calendar.MINUTE, 0)
+        }.timeInMillis
+
+        val yesterdayCal = java.util.Calendar.getInstance().apply {
+            timeInMillis = now
+            add(java.util.Calendar.DAY_OF_YEAR, -1)
+        }
+        val yesterdayExpiry = yesterdayCal.timeInMillis
+        assertTrue(ParkingTimerPlanner.isStaleExpired(yesterdayExpiry, now))
+
+        val oneWeekAgo = now - 7 * 24 * 3600_000L
+        assertTrue(ParkingTimerPlanner.isStaleExpired(oneWeekAgo, now))
     }
 }

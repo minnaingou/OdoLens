@@ -346,6 +346,15 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Dismiss action: clears the expired timer state directly without opening the app
+        val dismissIntent = Intent(ParkingExtendReceiver.ACTION_CANCEL).apply {
+            setClass(context, ParkingExtendReceiver::class.java)
+        }
+        val dismissPi = PendingIntent.getBroadcast(
+            context, REQ_CANCEL, dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setContentTitle("⏰ Parking Expired$noteText")
@@ -353,6 +362,8 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(contentPi)
+            .setDeleteIntent(dismissPi)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Clear Parking", dismissPi)
             .build()
 
         notificationManager.notify(EXPIRY_NOTIFICATION_ID, notification)

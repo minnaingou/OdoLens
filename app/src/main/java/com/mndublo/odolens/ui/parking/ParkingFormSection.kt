@@ -297,6 +297,7 @@ fun ParkingFormSection(
 @Composable
 fun AlertOffsetSection(
     warningOffsetMinutes: Int,
+    freeDurationMinutes: Int = 0,
     isCustomOffsetSelected: Boolean,
     customOffsetInput: String,
     onOffsetSelected: (Int) -> Unit,
@@ -311,6 +312,8 @@ fun AlertOffsetSection(
         Pair("45 mins", 45),
         Pair("1 Hour", 60)
     )
+
+    val isOffsetTooLarge = freeDurationMinutes > 0 && warningOffsetMinutes >= freeDurationMinutes
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -331,8 +334,10 @@ fun AlertOffsetSection(
             ) {
                 offsetOptions.take(3).forEach { option ->
                     val isSelected = !isCustomOffsetSelected && warningOffsetMinutes == option.second
+                    val isEnabled = freeDurationMinutes <= 0 || option.second < freeDurationMinutes
                     FilterChip(
                         selected = isSelected,
+                        enabled = isEnabled,
                         onClick = { onOffsetSelected(option.second) },
                         label = { Text(option.first) },
                         // Share the same background as the quick-start preset pills — including
@@ -362,8 +367,10 @@ fun AlertOffsetSection(
             ) {
                 offsetOptions.drop(3).forEach { option ->
                     val isSelected = !isCustomOffsetSelected && warningOffsetMinutes == option.second
+                    val isEnabled = freeDurationMinutes <= 0 || option.second < freeDurationMinutes
                     FilterChip(
                         selected = isSelected,
+                        enabled = isEnabled,
                         onClick = { onOffsetSelected(option.second) },
                         label = { Text(option.first) },
                         leadingIcon = if (isSelected) {
@@ -413,21 +420,38 @@ fun AlertOffsetSection(
                 enter = fadeIn(animationSpec = tween(durationMillis = 250)) +
                     expandVertically(animationSpec = tween(durationMillis = 250))
             ) {
+                val customVal = customOffsetInput.toIntOrNull() ?: 0
+                val isCustomInvalid = freeDurationMinutes > 0 && customVal >= freeDurationMinutes
                 Column {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = customOffsetInput,
                         onValueChange = onCustomOffsetInput,
                         label = { Text("Warning Offset (Minutes)") },
+                        isError = isCustomInvalid,
+                        supportingText = if (isCustomInvalid) {
+                            { Text("Offset must be less than free duration ($freeDurationMinutes mins)", color = MaterialTheme.colorScheme.error) }
+                        } else null,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
+
+            if (isOffsetTooLarge && !isCustomOffsetSelected) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Alert offset ($warningOffsetMinutes mins) must be less than free duration ($freeDurationMinutes mins)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = onSetAlarm,
+                enabled = !isOffsetTooLarge,
                 modifier = Modifier
                     .fillMaxWidth()
                     // M3 Expressive Medium tier (56dp) for the primary hero action.

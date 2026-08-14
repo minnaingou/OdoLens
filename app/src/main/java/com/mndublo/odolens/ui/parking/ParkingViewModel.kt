@@ -50,6 +50,10 @@ data class ParkingUiState(
     val countdownText: String = "",
     /** Remaining fraction of the free-parking window (1.0 → 0.0), refreshed by the countdown ticker. */
     val timerProgressFraction: Float = 1f,
+    /** True when the active parking session has expired and is waiting for user acknowledgment. */
+    val isExpired: Boolean = false,
+    /** Elapsed time since expiration: e.g. "5m 20s" */
+    val expiredAgoText: String = "",
     // One-shot UI feedback flags, consumed by the screen
     val alarmJustScheduled: Boolean = false,
     val scheduleFailed: Boolean = false,
@@ -59,12 +63,12 @@ data class ParkingUiState(
     val selectedDirectoryEntryId: String? = null,
     val showDirectorySheet: Boolean = false
 ) {
-    val isTimerRunning: Boolean get() = expiryMs > 0L
+    val isTimerRunning: Boolean get() = expiryMs > 0L && !isExpired
     val scheduledAlarmTime: String? get() = alarmTime.ifBlank { null }
 
     /** Expiry shown in the timer card / form preview. */
     val calculatedExpiry: String
-        get() = if (isTimerRunning) {
+        get() = if (expiryMs > 0L) {
             val cal = Calendar.getInstance().apply { timeInMillis = expiryMs }
             TimeFormatter.formatTime(
                 cal.get(Calendar.HOUR_OF_DAY),
@@ -112,19 +116,35 @@ class ParkingViewModel(
             combine(
                 settings.parkingExpiryMs,
                 settings.parkingStartTime,
-                settings.parkingSpotNote
-            ) { expiry, start, spot -> Triple(expiry, start, spot) }
-                .collect { (expiry, start, spot) ->
-                    _uiState.update { st ->
-                        st.copy(
-                            expiryMs = expiry,
-                            startTime = start,
-                            spotNote = spot,
-                            startTimeInput = if (expiry > 0L && start.isNotBlank()) start else st.startTimeInput,
-                            parkingSpotNoteInput = if (expiry > 0L && spot.isNotBlank()) spot else st.parkingSpotNoteInput
-                        )
-                    }
+                settings.parkingSpotNote,
+                settings.parkingIsExpired
+            ) { expiry, start, spot, persistedExpired ->
+                val nowMs = now()
+                // Auto-purge stale expired session (e.g. past midnight / next calendar day)
+                if (expiry > 0L && ParkingTimerPlanner.isStaleExpired(expiry, nowMs)) {
+                    resetTimer()
+                    return@combine
                 }
+
+                val hasExpired = (expiry > 0L && nowMs >= expiry) || persistedExpired
+                val expiredAgo = if (hasExpired && expiry > 0L) {
+                    ParkingTimerPlanner.formatExpiredDuration(nowMs - expiry)
+                } else {
+                    ""
+                }
+
+                _uiState.update { st ->
+                    st.copy(
+                        expiryMs = expiry,
+                        startTime = start,
+                        spotNote = spot,
+                        isExpired = hasExpired,
+                        expiredAgoText = expiredAgo,
+                        startTimeInput = if (expiry > 0L && start.isNotBlank()) start else st.startTimeInput,
+                        parkingSpotNoteInput = if (expiry > 0L && spot.isNotBlank()) spot else st.parkingSpotNoteInput
+                    )
+                }
+            }.collect {}
         }
         viewModelScope.launch {
             settings.notificationOffsetMinutes.collect { offset ->
@@ -140,35 +160,54 @@ class ParkingViewModel(
             }
         }
 
-        // Live countdown ticker while a timer is active.
+        // Live countdown / expired ticker while a timer or expired session is active.
         viewModelScope.launch {
-            _uiState.map { Triple(it.expiryMs, it.isTimerRunning, it.freeDurationMinutes) }
+            _uiState.map { Triple(it.expiryMs, it.isExpired, it.freeDurationMinutes) }
                 .distinctUntilChanged()
-                .collect { (expiry, running, _) ->
+                .collect { (expiry, isExpired, _) ->
                     countdownJob?.cancel()
-                    if (running && expiry > 0L) {
+                    if (expiry > 0L) {
                         countdownJob = viewModelScope.launch {
                             while (isActive) {
                                 val nowMs = now()
-                                _uiState.update { st ->
-                                    st.copy(
-                                        countdownText = ParkingTimerPlanner.formatCountdown(expiry - nowMs),
-                                        timerProgressFraction = ParkingTimerPlanner.remainingFraction(
-                                            expiryMs = expiry,
-                                            totalMs = ParkingTimerPlanner.countdownTotalMs(
-                                                freeDurationMinutes = st.freeDurationMinutes,
-                                                startTime = st.startTime,
-                                                expiryMs = expiry
-                                            ),
-                                            nowMs = nowMs
+                                if (ParkingTimerPlanner.isStaleExpired(expiry, nowMs)) {
+                                    resetTimer()
+                                    break
+                                }
+
+                                val hasExpired = isExpired || nowMs >= expiry
+                                if (hasExpired) {
+                                    val expiredAgo = ParkingTimerPlanner.formatExpiredDuration(nowMs - expiry)
+                                    _uiState.update { st ->
+                                        st.copy(
+                                            isExpired = true,
+                                            expiredAgoText = expiredAgo,
+                                            countdownText = "Expired!",
+                                            timerProgressFraction = 0f
                                         )
-                                    )
+                                    }
+                                } else {
+                                    _uiState.update { st ->
+                                        st.copy(
+                                            isExpired = false,
+                                            countdownText = ParkingTimerPlanner.formatCountdown(expiry - nowMs),
+                                            timerProgressFraction = ParkingTimerPlanner.remainingFraction(
+                                                expiryMs = expiry,
+                                                totalMs = ParkingTimerPlanner.countdownTotalMs(
+                                                    freeDurationMinutes = st.freeDurationMinutes,
+                                                    startTime = st.startTime,
+                                                    expiryMs = expiry
+                                                ),
+                                                nowMs = nowMs
+                                            )
+                                        )
+                                    }
                                 }
                                 delay(1000)
                             }
                         }
                     } else {
-                        _uiState.update { it.copy(countdownText = "", timerProgressFraction = 1f) }
+                        _uiState.update { it.copy(countdownText = "", timerProgressFraction = 1f, isExpired = false, expiredAgoText = "") }
                     }
                 }
         }
@@ -249,11 +288,12 @@ class ParkingViewModel(
     fun scheduleAlarm() {
         val s = _uiState.value
         val freeDur = s.freeDurationInput.toIntOrNull() ?: 0
-        // Reject schedules whose free window has already elapsed (or that are malformed) —
+        // Reject schedules whose free window has already elapsed (or that are malformed, or offset >= duration) —
         // never silently roll a past expiry to tomorrow.
         val validationError = ParkingTimerPlanner.validateSchedule(
             startTime = s.startTimeInput,
             freeMinutes = freeDur,
+            offsetMinutes = s.warningOffsetMinutes,
             now = now()
         )
         if (validationError != null) {
@@ -282,14 +322,6 @@ class ParkingViewModel(
                     freeDurationMinutes = freeDur,
                     offsetMinutes = s.warningOffsetMinutes
                 )
-                scheduler.showInstantConfirmation(
-                    startTime = s.startTimeInput,
-                    freeDurationMinutes = freeDur,
-                    offsetMinutes = s.warningOffsetMinutes,
-                    scheduledAlarmTimeStr = alarmStr,
-                    spotNote = s.parkingSpotNoteInput,
-                    use12h = s.use12h
-                )
                 _uiState.update { it.copy(errorMessage = null, alarmJustScheduled = true) }
             } catch (e: Exception) {
                 _uiState.update {
@@ -311,6 +343,13 @@ class ParkingViewModel(
                 it.copy(
                     countdownText = "",
                     timerProgressFraction = 1f,
+                    isExpired = false,
+                    expiredAgoText = "",
+                    expiryMs = 0L,
+                    alarmTime = "",
+                    spotNote = "",
+                    startTime = "",
+                    freeDurationMinutes = 0,
                     startTimeInput = "00:00",
                     freeDurationInput = "0",
                     parkingSpotNoteInput = "",

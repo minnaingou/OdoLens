@@ -21,12 +21,12 @@ class ParkingExpiredReceiver : BroadcastReceiver() {
         // Show "Parking Expired" notification
         NotificationHelper.showExpiredNotification(context, spotNote)
 
-        // Auto-cancel the timer state in DataStore so countdown disappears
+        // Mark the timer state as expired in DataStore
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val repo = SettingsRepository(context.applicationContext)
-                repo.clearParkingTimer()
+                repo.setParkingExpired(true)
             } finally {
                 pending.finish()
             }
