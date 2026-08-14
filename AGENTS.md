@@ -6,7 +6,7 @@ economy and a parking timer with notifications, built on ML Kit OCR + Gemini AI.
 ## Build & test
 
 - Build debug APK: `./gradlew :app:assembleDebug`
-- Unit tests: `./gradlew :app:testDebugUnitTest` (21 tests)
+- Unit tests: `./gradlew :app:testDebugUnitTest` (44 tests)
 - Test caveat: the ParkingViewModel runs an infinite countdown loop on `viewModelScope`.
   In its unit tests, use `UnconfinedTestDispatcher` as Main and cancel `viewModelScope`
   before the test returns — never `advanceUntilIdle()` (it never idles → hang).
@@ -21,9 +21,10 @@ economy and a parking timer with notifications, built on ML Kit OCR + Gemini AI.
   - `SettingsRepository` (DataStore) implements narrow interfaces: `ParkingSettingsSource`,
     `DashboardSettingsSource`, `SettingsSource`
   - `TripRepository` implements `TripStore` (JSON file in filesDir)
-  - `ParkingTimerPlanner` — PURE domain: 12h cap, expiry math, countdown formatting
+  - `ParkingTimerPlanner` — PURE domain: 12h cap, expiry math, countdown formatting,
+    elapsed expired duration formatting, stale expired session detection, schedule & offset validation
     (no Android imports; unit-tested)
-  - `Models.kt`, `TimeFormatter.kt`, `AppLogger.kt`
+  - `ParkingPlace.kt`, `Models.kt`, `TimeFormatter.kt`, `AppLogger.kt`
 - `notification/` — OS alarms + notifications: `NotificationHelper`, `ParkingTimerManager`
   (extend/cancel timer; delegates math to the planner), receivers (`ParkingAlarmReceiver`,
   `ParkingExtendReceiver`, `ParkingExpiredReceiver`)

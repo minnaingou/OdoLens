@@ -13,20 +13,26 @@ ML Kit OCR and Google Gemini AI.
 - Scan a car dashboard photo (camera or gallery) — ML Kit OCR reads distance and fuel
   economy; Gemini AI takes over automatically when OCR is unclear
 - Log trips with distance, fuel economy, fuel price and an optional name
-- Live cost estimate before saving; fuel-price tracking with an "as of" date
-- Historical trips list with swipe-to-delete
+- Live trip cost estimate before saving; fuel-price tracking with an "as of" date
+- Searchable trip history with swipe-to-edit and swipe-to-delete
 
-**Parking Timer**
+**Parking Timer & Directory**
 
 - Scan a parking ticket (Thai or English) to auto-fill the start time and free duration
-- Set a reminder with a warning offset (15 / 30 / 45 / 60 minutes or custom)
-- Live countdown plus an OS alarm and ongoing notification with quick actions
-- Extend free parking (up to a 12-hour cap), clear & reset, and the timer survives tab
-  switches
+- Quick-start presets ("Now", "5m ago", "15m ago", "30m ago") and time picker
+- Built-in Parking Directory to save, edit, and quickly select favorite parking spots and free durations
+- Alert warning offset validation (15 / 30 / 45 / 60 minutes or custom)
+- Material 3 Expressive wavy countdown ring and notification alerts
+- "Parking Expired" card with a live "Expired X ago" ticker until acknowledged
+- Automatic end-of-day purge for stale expired sessions
+- Extend free parking (up to a 12-hour cap), clear & reset, and direct notification dismissal (timer survives tab switches)
 
-**Settings**
+**Settings & Customization**
 
-- Gemini API key, 12/24-hour time format, theme (system / light / dark), debug log viewer
+- Instant auto-saving preferences (theme mode, time format, API key)
+- Material You Dynamic Color: match system wallpaper theme (Android 12+) alongside branded dark/light modes
+- Gemini API key management with paste action and visibility toggle
+- Built-in debug log viewer
 
 ## Android version support
 
