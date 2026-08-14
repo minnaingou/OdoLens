@@ -16,8 +16,10 @@ interface ParkingSettingsSource {
     val parkingStartTime: Flow<String>
     val parkingFreeDuration: Flow<Int>
     val parkingOffsetMinutes: Flow<Int>
+    val parkingPlaceDirectory: Flow<List<ParkingPlace>>
 
     suspend fun saveNotificationOffsetMinutes(minutes: Int)
+    suspend fun saveParkingPlaceDirectory(places: List<ParkingPlace>)
 
     suspend fun saveParkingTimer(
         expiryMs: Long,

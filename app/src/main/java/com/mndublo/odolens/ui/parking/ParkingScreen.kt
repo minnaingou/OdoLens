@@ -287,7 +287,11 @@ fun ParkingScreen(
                                 onFreeDurationChange = viewModel::onFreeDurationChange,
                                 parkingSpotNoteInput = uiState.parkingSpotNoteInput,
                                 onSpotNoteChange = viewModel::onSpotNoteChange,
-                                calculatedExpiry = uiState.calculatedExpiry
+                                calculatedExpiry = uiState.calculatedExpiry,
+                                parkingDirectory = uiState.parkingDirectory,
+                                selectedDirectoryEntryId = uiState.selectedDirectoryEntryId,
+                                onDirectoryEntrySelected = viewModel::onDirectoryEntrySelected,
+                                onOpenDirectory = viewModel::onOpenDirectorySheet
                             )
                         }
                     }
@@ -330,6 +334,19 @@ fun ParkingScreen(
                     freeDurationMinutes = uiState.freeDurationMinutes,
                     onDismiss = { showExtendSheet = false },
                     onExtend = { viewModel.extendTimer(it) }
+                )
+            }
+
+            // Parking Place Directory Sheet
+            if (uiState.showDirectorySheet) {
+                ParkingDirectorySheet(
+                    directory = uiState.parkingDirectory,
+                    selectedEntryId = uiState.selectedDirectoryEntryId,
+                    onSelect = viewModel::onDirectoryEntrySelected,
+                    onAdd = viewModel::onAddDirectoryEntry,
+                    onEdit = viewModel::onEditDirectoryEntry,
+                    onDelete = viewModel::onDeleteDirectoryEntry,
+                    onDismiss = viewModel::onCloseDirectorySheet
                 )
             }
 

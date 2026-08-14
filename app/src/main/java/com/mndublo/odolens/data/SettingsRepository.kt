@@ -35,6 +35,8 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
         private val PARKING_OFFSET_MINUTES = intPreferencesKey("parking_offset_minutes_snapshot")
         // First-launch notification permission prompt — shown only once
         private val NOTIFICATION_PROMPT_DONE = androidx.datastore.preferences.core.booleanPreferencesKey("notification_prompt_done")
+        // Parking place directory — user-managed list of named places with free hours
+        private val PARKING_PLACE_DIRECTORY = stringPreferencesKey("parking_place_directory")
     }
 
     override val fuelPrice: Flow<Double> = context.settingsDataStore.data.map { preferences ->
@@ -88,6 +90,10 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
 
     override val parkingOffsetMinutes: Flow<Int> = context.settingsDataStore.data.map { preferences ->
         preferences[PARKING_OFFSET_MINUTES] ?: 60
+    }
+
+    override val parkingPlaceDirectory: Flow<List<ParkingPlace>> = context.settingsDataStore.data.map { preferences ->
+        ParkingPlaceSerializer.decode(preferences[PARKING_PLACE_DIRECTORY] ?: "")
     }
 
     // Whether the first-launch notification permission prompt has been shown
@@ -149,6 +155,12 @@ class SettingsRepository(private val context: Context) : ParkingSettingsSource, 
     suspend fun setNotificationPromptDone(done: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[NOTIFICATION_PROMPT_DONE] = done
+        }
+    }
+
+    override suspend fun saveParkingPlaceDirectory(places: List<ParkingPlace>) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PARKING_PLACE_DIRECTORY] = ParkingPlaceSerializer.encode(places)
         }
     }
 

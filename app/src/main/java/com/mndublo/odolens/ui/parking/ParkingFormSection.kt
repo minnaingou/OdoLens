@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
@@ -38,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -50,6 +52,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.mndublo.odolens.data.ParkingPlace
 import com.mndublo.odolens.data.TimeFormatter
 import java.util.Locale
 
@@ -64,7 +67,12 @@ fun ParkingFormSection(
     onFreeDurationChange: (String) -> Unit,
     parkingSpotNoteInput: String,
     onSpotNoteChange: (String) -> Unit,
-    calculatedExpiry: String
+    calculatedExpiry: String,
+    // Directory
+    parkingDirectory: List<ParkingPlace> = emptyList(),
+    selectedDirectoryEntryId: String? = null,
+    onDirectoryEntrySelected: (ParkingPlace) -> Unit = {},
+    onOpenDirectory: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -122,7 +130,9 @@ fun ParkingFormSection(
             Spacer(modifier = Modifier.height(12.dp))
 
             val currentMinutes = freeDurationInput.toIntOrNull() ?: 0
-            val currentHours = (currentMinutes / 60f).coerceIn(0f, 8f)
+            val currentHours = (currentMinutes / 60f)
+            // Dynamic max: expand above 8 h to accommodate directory entries > 8 h
+            val sliderMax = maxOf(8f, currentHours)
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
@@ -138,21 +148,39 @@ fun ParkingFormSection(
                             style = MaterialTheme.typography.titleSmall
                         )
                     }
-                    val displayStr = if (currentMinutes % 60 == 0) {
-                        "${currentMinutes / 60} ${if (currentMinutes / 60 == 1) "Hour" else "Hours"}"
-                    } else {
-                        String.format(Locale.getDefault(), "%.1f Hours (%d mins)", currentHours, currentMinutes)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val displayStr = if (currentMinutes % 60 == 0) {
+                            "${currentMinutes / 60} ${if (currentMinutes / 60 == 1) "Hour" else "Hours"}"
+                        } else {
+                            String.format(Locale.getDefault(), "%.1f Hours (%d mins)", currentHours, currentMinutes)
+                        }
+                        Text(
+                            text = displayStr,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        // Directory open button
+                        IconButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onOpenDirectory()
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Bookmarks,
+                                contentDescription = "Open parking place directory",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                    Text(
-                        text = displayStr,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
 
                 var lastSliderStep by remember { mutableIntStateOf(-1) }
                 Slider(
-                    value = currentHours,
+                    value = currentHours.coerceIn(0f, sliderMax),
                     onValueChange = { hours ->
                         val step = (hours * 2).toInt()
                         if (step != lastSliderStep) {
@@ -162,10 +190,71 @@ fun ParkingFormSection(
                         val mins = (hours * 60).toInt()
                         onFreeDurationChange(mins.toString())
                     },
-                    valueRange = 0f..8f,
-                    steps = 15,
+                    valueRange = 0f..sliderMax,
+                    steps = maxOf(15, (sliderMax * 2).toInt() - 1),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Quick-pick chips for max 3 recent places from directory
+                val recentPlaces = remember(parkingDirectory) {
+                    parkingDirectory.sortedByDescending { it.lastUsedEpochMs }.take(3)
+                }
+                if (recentPlaces.isNotEmpty()) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        items(recentPlaces, key = { it.id }) { place ->
+                            val isSelected = place.id == selectedDirectoryEntryId
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onDirectoryEntrySelected(place)
+                                },
+                                label = {
+                                    Text("${place.name} (${place.freeMinutes / 60}h)")
+                                },
+                                leadingIcon = if (isSelected) {
+                                    {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                        )
+                                    }
+                                } else null,
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    labelColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    // Empty directory hint
+                    TextButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onOpenDirectory()
+                        },
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Bookmarks,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "Save this place to directory",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -260,8 +349,9 @@ fun AlertOffsetSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = MaterialTheme.colorScheme.onSurface,
-                            selectedContainerColor = MaterialTheme.colorScheme.surface,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     )
                 }
@@ -276,8 +366,6 @@ fun AlertOffsetSection(
                         selected = isSelected,
                         onClick = { onOffsetSelected(option.second) },
                         label = { Text(option.first) },
-                        // Share the same background as the quick-start preset pills — including
-                        // the selected state — so selection is shown by the check icon only.
                         leadingIcon = if (isSelected) {
                             {
                                 Icon(
@@ -290,8 +378,9 @@ fun AlertOffsetSection(
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = MaterialTheme.colorScheme.onSurface,
-                            selectedContainerColor = MaterialTheme.colorScheme.surface,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     )
                 }
@@ -300,8 +389,6 @@ fun AlertOffsetSection(
                     selected = isCustomOffsetSelected,
                     onClick = onCustomOffsetSelected,
                     label = { Text("Custom Minutes") },
-                    // Share the same background as the quick-start preset pills — including
-                    // the selected state — so selection is shown by the check icon only.
                     leadingIcon = if (isCustomOffsetSelected) {
                         {
                             Icon(
@@ -314,8 +401,9 @@ fun AlertOffsetSection(
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedContainerColor = MaterialTheme.colorScheme.surface,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 )
             }

@@ -7,12 +7,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.mndublo.odolens.data.ParkingPlace
 import com.mndublo.odolens.data.ParkingSettingsSource
 import com.mndublo.odolens.data.ParkingTimerPlanner
 import com.mndublo.odolens.data.SettingsRepository
 import com.mndublo.odolens.data.TimeFormatter
 import java.util.Calendar
 import java.util.Locale
+import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,7 +53,11 @@ data class ParkingUiState(
     // One-shot UI feedback flags, consumed by the screen
     val alarmJustScheduled: Boolean = false,
     val scheduleFailed: Boolean = false,
-    val extendFailed: Boolean = false
+    val extendFailed: Boolean = false,
+    // Parking place directory
+    val parkingDirectory: List<ParkingPlace> = emptyList(),
+    val selectedDirectoryEntryId: String? = null,
+    val showDirectorySheet: Boolean = false
 ) {
     val isTimerRunning: Boolean get() = expiryMs > 0L
     val scheduledAlarmTime: String? get() = alarmTime.ifBlank { null }
@@ -166,13 +172,32 @@ class ParkingViewModel(
                     }
                 }
         }
+
+        // Parking place directory.
+        viewModelScope.launch {
+            settings.parkingPlaceDirectory.collect { places ->
+                _uiState.update { it.copy(parkingDirectory = places) }
+            }
+        }
     }
 
     // ---- Form inputs ----
 
     fun onStartTimeChange(value: String) = _uiState.update { it.copy(startTimeInput = value) }
 
-    fun onFreeDurationChange(value: String) = _uiState.update { it.copy(freeDurationInput = value) }
+    fun onFreeDurationChange(value: String) {
+        val selectedEntry = _uiState.value.let { st ->
+            st.selectedDirectoryEntryId?.let { id -> st.parkingDirectory.find { it.id == id } }
+        }
+        // Clear directory selection badge when the user drags to a different value
+        val clearSelection = selectedEntry != null && value != selectedEntry.freeMinutes.toString()
+        _uiState.update {
+            it.copy(
+                freeDurationInput = value,
+                selectedDirectoryEntryId = if (clearSelection) null else it.selectedDirectoryEntryId
+            )
+        }
+    }
 
     fun onSpotNoteChange(value: String) = _uiState.update { it.copy(parkingSpotNoteInput = value) }
 
@@ -342,6 +367,54 @@ class ParkingViewModel(
     fun consumeScheduleFailed() = _uiState.update { it.copy(scheduleFailed = false) }
 
     fun consumeExtendFailed() = _uiState.update { it.copy(extendFailed = false) }
+
+    // ---- Parking Place Directory ----
+
+    /** Select a directory entry: pre-fill free duration, mark active, and update last used timestamp. */
+    fun onDirectoryEntrySelected(place: ParkingPlace) {
+        val currentNow = now()
+        _uiState.update {
+            it.copy(
+                freeDurationInput = place.freeMinutes.toString(),
+                selectedDirectoryEntryId = place.id
+            )
+        }
+        val updated = _uiState.value.parkingDirectory
+            .map { if (it.id == place.id) it.copy(lastUsedEpochMs = currentNow) else it }
+        viewModelScope.launch { settings.saveParkingPlaceDirectory(updated) }
+    }
+
+    fun onOpenDirectorySheet() = _uiState.update { it.copy(showDirectorySheet = true) }
+
+    fun onCloseDirectorySheet() = _uiState.update { it.copy(showDirectorySheet = false) }
+
+    /** Add a new named place to the directory and persist. */
+    fun onAddDirectoryEntry(name: String, freeMinutes: Int) {
+        val newPlace = ParkingPlace(
+            id = UUID.randomUUID().toString(),
+            name = name.trim(),
+            freeMinutes = freeMinutes,
+            lastUsedEpochMs = now()
+        )
+        val updated = (_uiState.value.parkingDirectory + newPlace)
+        viewModelScope.launch { settings.saveParkingPlaceDirectory(updated) }
+    }
+
+    /** Edit an existing entry by id and persist. */
+    fun onEditDirectoryEntry(id: String, name: String, freeMinutes: Int) {
+        val updated = _uiState.value.parkingDirectory
+            .map { if (it.id == id) it.copy(name = name.trim(), freeMinutes = freeMinutes) else it }
+        viewModelScope.launch { settings.saveParkingPlaceDirectory(updated) }
+    }
+
+    /** Delete an entry by id; clears selection if the deleted entry was active. */
+    fun onDeleteDirectoryEntry(id: String) {
+        val updated = _uiState.value.parkingDirectory.filter { it.id != id }
+        _uiState.update {
+            it.copy(selectedDirectoryEntryId = if (it.selectedDirectoryEntryId == id) null else it.selectedDirectoryEntryId)
+        }
+        viewModelScope.launch { settings.saveParkingPlaceDirectory(updated) }
+    }
 
     companion object {
         /** Factory wiring the production implementations. */
