@@ -2,14 +2,7 @@ package com.mndublo.odolens.ui.dashboard
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,10 +42,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mndublo.odolens.ui.common.ErrorCard
+import com.mndublo.odolens.ui.common.MorphingDashboardHeader
 import com.mndublo.odolens.ui.common.ScanCameraOverlay
-import com.mndublo.odolens.ui.common.ScanFab
 import com.mndublo.odolens.ui.common.loadBitmapFromUri
-import com.mndublo.odolens.ui.common.rememberFabVisibility
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,121 +105,100 @@ fun DashboardScreen(
     )
 
     val listState = rememberLazyListState()
-    val isFabVisible by rememberFabVisibility(listState)
 
-    Scaffold(
-        floatingActionButton = {
-            if (!showCamera) {
-                AnimatedVisibility(
-                    visible = isFabVisible,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn() +
-                        scaleIn(initialScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
-                ) {
-                    ScanFab(
-                        text = stringResource(com.mndublo.odolens.R.string.dashboard_fab_scan),
-                        onClick = { showCamera = true }
-                    )
-                }
+    // Continuous scroll progress fraction (0f = expanded, 1f = collapsed into minibar)
+    val collapseProgress by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) {
+                1f
+            } else {
+                (listState.firstVisibleItemScrollOffset / 280f).coerceIn(0f, 1f)
             }
         }
-    ) { innerPadding ->
+    }
+
+    Scaffold { innerPadding ->
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp)
-            ) {
-                // Header displaying active Fuel Price
-                DashboardHeader(
-                    fuelPrice = uiState.fuelPrice,
-                    fuelPriceDate = uiState.fuelPriceDate,
-                    onEditClick = { showEditPriceDialog = true }
-                )
-
-                if (uiState.settingsLoaded && uiState.apiKey.isBlank()) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "No Gemini API key set. Fuel economy reading may be inaccurate.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(
-                                onClick = { onNavigateToSettings() }
-                            ) {
-                                Text("Set up →", color = MaterialTheme.colorScheme.onErrorContainer)
-                            }
-                        }
-                    }
-                }
-
-                if (showEditPriceDialog) {
-                    EditFuelPriceDialog(
-                        initialPrice = uiState.fuelPrice,
-                        onSave = { price ->
-                            viewModel.saveFuelPrice(price)
-                            showEditPriceDialog = false
-                        },
-                        onDismiss = { showEditPriceDialog = false }
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Morphing Top Header (Fuel Price + Hero Scan Actions)
+                if (!showCamera) {
+                    MorphingDashboardHeader(
+                        progress = collapseProgress,
+                        fuelPrice = uiState.fuelPrice,
+                        fuelPriceDate = uiState.fuelPriceDate,
+                        onEditPrice = { showEditPriceDialog = true },
+                        onCamera = { showCamera = true },
+                        onGallery = { galleryLauncher.launch("image/*") },
+                        isLoading = uiState.isLoading,
+                        statusMessage = uiState.statusMessage
                     )
                 }
 
-                // Main form and List of Trips
+                // Main scrollable content
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 4.dp, bottom = 88.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // OCR Scanning / Pickers Section
+                    if (uiState.settingsLoaded && uiState.apiKey.isBlank()) {
+                        item(key = "apiKeyWarning") {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = MaterialTheme.shapes.large
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "No Gemini API key set. Fuel economy reading may be inaccurate.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    TextButton(
+                                        onClick = { onNavigateToSettings() }
+                                    ) {
+                                        Text("Set up →", color = MaterialTheme.colorScheme.onErrorContainer)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     uiState.errorMessage?.let { error ->
                         item(key = "dashboardError") {
                             ErrorCard(
                                 errorMessage = error,
                                 onDismiss = viewModel::clearErrorMessage,
-                                // Keyed + animateItem so dismissal animates the card out
-                                // instead of the list jumping.
                                 modifier = Modifier.animateItem()
                             )
                         }
                     }
 
-                    item {
-                        TripScanCard(
-                            onCamera = { showCamera = true },
-                            onGallery = { galleryLauncher.launch("image/*") },
-                            isLoading = uiState.isLoading,
-                            statusMessage = uiState.statusMessage
-                        )
-                    }
-
                     // Form Fields Section
-                    item {
+                    item(key = "tripDetailsForm") {
                         TripDetailsForm(
                             distanceInput = uiState.distanceInput,
                             onDistanceChange = viewModel::onDistanceChange,
@@ -253,6 +225,17 @@ fun DashboardScreen(
                         }
                     )
                 }
+            }
+
+            if (showEditPriceDialog) {
+                EditFuelPriceDialog(
+                    initialPrice = uiState.fuelPrice,
+                    onSave = { price ->
+                        viewModel.saveFuelPrice(price)
+                        showEditPriceDialog = false
+                    },
+                    onDismiss = { showEditPriceDialog = false }
+                )
             }
 
             if (tripToEdit != null) {

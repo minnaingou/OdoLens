@@ -96,7 +96,7 @@ fun DashboardHeader(
                 )
                 if (fuelPriceDate.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    // Small tonal pill carrying the "as of" date.
+                    // Small tonal pill carrying the "As of" date.
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
@@ -104,7 +104,7 @@ fun DashboardHeader(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "as of $fuelPriceDate",
+                            text = "As of $fuelPriceDate",
                             style = MaterialTheme.typography.labelMedium,
                             color = onPrimaryContainer
                         )

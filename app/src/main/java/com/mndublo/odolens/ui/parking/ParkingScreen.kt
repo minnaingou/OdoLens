@@ -6,14 +6,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,9 +26,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,10 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mndublo.odolens.ui.common.ErrorCard
+import com.mndublo.odolens.ui.common.MorphingParkingHeader
 import com.mndublo.odolens.ui.common.ScanCameraOverlay
-import com.mndublo.odolens.ui.common.ScanFab
 import com.mndublo.odolens.ui.common.loadBitmapFromUri
-import com.mndublo.odolens.ui.common.rememberFabVisibility
 import kotlinx.coroutines.launch
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -124,8 +116,6 @@ fun ParkingScreen(
     LaunchedEffect(uiState.scheduleFailed) {
         if (uiState.scheduleFailed) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            // The error message is shown in the scan card at the top of the list while the
-            // Set Alarm button sits at the bottom — scroll back up so the user can see it.
             listState.animateScrollToItem(0)
             viewModel.consumeScheduleFailed()
         }
@@ -167,8 +157,6 @@ fun ParkingScreen(
         }
     )
 
-    val isFabVisible by rememberFabVisibility(listState)
-
     // Scroll to top when timer starts or expires so the card is immediately visible
     LaunchedEffect(uiState.isTimerRunning, uiState.isExpired) {
         if (uiState.isTimerRunning || uiState.isExpired) {
@@ -178,88 +166,95 @@ fun ParkingScreen(
 
     val showActiveOrExpiredCard = uiState.isTimerRunning || uiState.isExpired
 
-    Scaffold(
-        floatingActionButton = {
-            if (!showCamera && !showActiveOrExpiredCard) {
-                AnimatedVisibility(
-                    visible = isFabVisible,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn() +
-                        scaleIn(initialScale = 0.92f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
-                ) {
-                    ScanFab(
-                        text = stringResource(com.mndublo.odolens.R.string.parking_fab_scan),
-                        onClick = { showCamera = true }
-                    )
-                }
+    // Continuous scroll progress fraction for Idle Mode morphing header
+    val collapseProgress by remember(showActiveOrExpiredCard) {
+        derivedStateOf {
+            if (showActiveOrExpiredCard) {
+                0f
+            } else if (listState.firstVisibleItemIndex > 0) {
+                1f
+            } else {
+                (listState.firstVisibleItemScrollOffset / 240f).coerceIn(0f, 1f)
             }
         }
-    ) { innerPadding ->
+    }
+
+    Scaffold { innerPadding ->
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp)
-            ) {
-                if (uiState.settingsLoaded && uiState.apiKey.isBlank()) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Warning",
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(com.mndublo.odolens.R.string.parking_no_api_key_warning),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-                            androidx.compose.material3.TextButton(
-                                onClick = { onNavigateToSettings() }
-                            ) {
-                                Text("Set up →", color = MaterialTheme.colorScheme.onErrorContainer)
-                            }
-                        }
-                    }
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Morphing Top Header (Only present in Idle Mode when timer is not active)
+                if (!showActiveOrExpiredCard && !showCamera) {
+                    MorphingParkingHeader(
+                        progress = collapseProgress,
+                        onCamera = { showCamera = true },
+                        onGallery = { galleryLauncher.launch("image/*") },
+                        isAiLoading = uiState.isAiLoading
+                    )
                 }
 
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 4.dp, bottom = 88.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    if (uiState.settingsLoaded && uiState.apiKey.isBlank()) {
+                        item(key = "apiKeyWarning") {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = MaterialTheme.shapes.large
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Warning",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(com.mndublo.odolens.R.string.parking_no_api_key_warning),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    TextButton(
+                                        onClick = { onNavigateToSettings() }
+                                    ) {
+                                        Text("Set up →", color = MaterialTheme.colorScheme.onErrorContainer)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     uiState.errorMessage?.let { error ->
                         item(key = "parkingError") {
                             ErrorCard(
                                 errorMessage = error,
                                 onDismiss = viewModel::clearErrorMessage,
-                                // Keyed + animateItem so dismissal animates the card out
-                                // instead of the list jumping.
                                 modifier = Modifier.animateItem()
                             )
                         }
                     }
 
-                    item {
-                        if (showActiveOrExpiredCard) {
+                    // Active Timer Mode (Hero countdown card)
+                    if (showActiveOrExpiredCard) {
+                        item(key = "activeTimerCard") {
                             ParkingTimerCard(
                                 countdownText = uiState.countdownText,
                                 calculatedExpiry = uiState.calculatedExpiry,
@@ -271,17 +266,12 @@ fun ParkingScreen(
                                 onExtend = { showExtendSheet = true },
                                 onReset = { viewModel.resetTimer() }
                             )
-                        } else {
-                            ParkingScanCard(
-                                onCamera = { showCamera = true },
-                                onGallery = { galleryLauncher.launch("image/*") },
-                                isAiLoading = uiState.isAiLoading
-                            )
                         }
                     }
 
+                    // Setup / Idle Mode Form Sections
                     if (!showActiveOrExpiredCard) {
-                        item {
+                        item(key = "parkingFormSection") {
                             ParkingFormSection(
                                 startTimeInput = uiState.startTimeInput,
                                 use12h = uiState.use12h,
@@ -301,7 +291,7 @@ fun ParkingScreen(
                     }
 
                     if (!showActiveOrExpiredCard) {
-                        item {
+                        item(key = "alertOffsetSection") {
                             AlertOffsetSection(
                                 warningOffsetMinutes = uiState.warningOffsetMinutes,
                                 freeDurationMinutes = uiState.freeDurationInput.toIntOrNull() ?: 0,
