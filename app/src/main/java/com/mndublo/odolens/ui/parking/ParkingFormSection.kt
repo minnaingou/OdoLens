@@ -234,26 +234,6 @@ fun ParkingFormSection(
                             )
                         }
                     }
-                } else {
-                    // Empty directory hint
-                    TextButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            onOpenDirectory()
-                        },
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Bookmarks,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = "Save this place to directory",
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))

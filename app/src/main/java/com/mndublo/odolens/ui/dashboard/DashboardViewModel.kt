@@ -12,6 +12,8 @@ import com.mndublo.odolens.data.SettingsRepository
 import com.mndublo.odolens.data.Trip
 import com.mndublo.odolens.data.TripRepository
 import com.mndublo.odolens.data.TripStore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +36,6 @@ data class DashboardUiState(
     val tripNameInput: String = "",
     val fuelPriceInput: String = "",
     val isLoading: Boolean = false,
-    val statusMessage: String? = null,
     val errorMessage: String? = null,
     // One-shot UI feedback flag, consumed by the screen (haptic on scan completion)
     val scanFeedback: Boolean = false
@@ -57,6 +58,9 @@ class DashboardViewModel(
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    /** In-flight scan job, so the user can cancel a scan from the progress card. */
+    private var scanJob: Job? = null
 
     private var fuelPriceSeeded = false
 
@@ -100,29 +104,40 @@ class DashboardViewModel(
     /** OCR-first → Gemini-fallback scan of a dashboard photo. */
     fun processImage(bitmap: Bitmap?) {
         if (bitmap == null) return
+        scanJob?.cancel()
         val apiKey = _uiState.value.apiKey
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, statusMessage = "Running OCR...") }
-            when (val outcome = scanPipeline.process(apiKey, bitmap)) {
-                is ScanOutcome.Success -> _uiState.update {
-                    it.copy(
-                        distanceInput = outcome.distanceKm,
-                        economyInput = outcome.fuelEconomyKmL,
-                        statusMessage = null,
-                        isLoading = false,
-                        scanFeedback = true
-                    )
+        scanJob = viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                when (val outcome = scanPipeline.process(apiKey, bitmap)) {
+                    is ScanOutcome.Success -> _uiState.update {
+                        it.copy(
+                            distanceInput = outcome.distanceKm,
+                            economyInput = outcome.fuelEconomyKmL,
+                            isLoading = false,
+                            scanFeedback = true
+                        )
+                    }
+                    is ScanOutcome.Failure -> _uiState.update {
+                        it.copy(
+                            errorMessage = outcome.message,
+                            isLoading = false,
+                            scanFeedback = true
+                        )
+                    }
                 }
-                is ScanOutcome.Failure -> _uiState.update {
-                    it.copy(
-                        errorMessage = outcome.message,
-                        statusMessage = null,
-                        isLoading = false,
-                        scanFeedback = true
-                    )
-                }
+            } catch (e: CancellationException) {
+                // Scan was cancelled from the progress card — clear the loading state.
+                _uiState.update { it.copy(isLoading = false) }
+                throw e
             }
         }
+    }
+
+    /** Cancels the in-flight scan; the progress card dismisses itself. */
+    fun cancelScan() {
+        scanJob?.cancel()
+        _uiState.update { it.copy(isLoading = false) }
     }
 
     /** Validates and persists a trip; resets the form on success. */

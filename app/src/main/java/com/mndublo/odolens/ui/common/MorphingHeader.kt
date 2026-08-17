@@ -182,8 +182,6 @@ fun MorphingDashboardHeader(
     onEditPrice: () -> Unit,
     onCamera: () -> Unit,
     onGallery: () -> Unit,
-    isLoading: Boolean,
-    statusMessage: String?,
     modifier: Modifier = Modifier
 ) {
     val totalHeight = lerp(184.dp, 56.dp, progress)
@@ -245,22 +243,20 @@ fun MorphingDashboardHeader(
                         style = MaterialTheme.typography.titleSmall,
                         color = onPrimaryContainer
                     )
-                    if (fuelPriceDate.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    onPrimaryContainer.copy(alpha = 0.12f),
-                                    MaterialTheme.shapes.small
-                                )
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = fuelPriceDate,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = onPrimaryContainer
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                onPrimaryContainer.copy(alpha = 0.12f),
+                                MaterialTheme.shapes.small
                             )
-                        }
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (fuelPriceDate.isNotBlank()) fuelPriceDate else "N/A",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onPrimaryContainer
+                        )
                     }
                 }
             }
@@ -323,6 +319,18 @@ fun MorphingDashboardHeader(
                 }
             }
 
+            // 4b. Subtle Tonal Divider (Fades out smoothly on scroll)
+            if (subtitleAlpha > 0.05f) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = 0.dp, y = 48.dp)
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .graphicsLayer { alpha = subtitleAlpha }
+                        .background(onPrimaryContainer.copy(alpha = 0.12f))
+                )
+            }
+
             // 5. Zone 2: "Log New Trip" Action Header with Subtitle
             val titleFontSize = lerp(18.sp, 16.sp, progress)
             if (subtitleAlpha > 0.05f) {
@@ -330,7 +338,7 @@ fun MorphingDashboardHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier
-                        .offset(x = 0.dp, y = 56.dp)
+                        .offset(x = 0.dp, y = 58.dp)
                         .graphicsLayer { alpha = subtitleAlpha }
                 ) {
                     Icon(
@@ -358,7 +366,7 @@ fun MorphingDashboardHeader(
 
             // 6. Camera Button: Glides diagonally and shrinks in width & height
             val camStartX = 0.dp
-            val camStartY = 106.dp
+            val camStartY = 108.dp
             val camStartW = (contentWidth - 8.dp) / 2
             val camStartH = 48.dp
 
@@ -383,7 +391,7 @@ fun MorphingDashboardHeader(
 
             // 7. Gallery Button: Glides diagonally and shrinks in width & height
             val galStartX = (contentWidth + 8.dp) / 2
-            val galStartY = 106.dp
+            val galStartY = 108.dp
             val galStartW = (contentWidth - 8.dp) / 2
             val galStartH = 48.dp
 
@@ -405,27 +413,6 @@ fun MorphingDashboardHeader(
                     .width(galW)
                     .height(galH)
             )
-
-            // 8. Progress Indicator (Only visible when loading)
-            if (isLoading && subtitleAlpha > 0.05f) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .offset(x = 0.dp, y = 158.dp)
-                        .graphicsLayer { alpha = subtitleAlpha }
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = statusMessage ?: "Processing...",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = onPrimaryContainer
-                    )
-                }
-            }
         }
     }
 }
@@ -439,10 +426,12 @@ fun MorphingParkingHeader(
     progress: Float,
     onCamera: () -> Unit,
     onGallery: () -> Unit,
-    isAiLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val totalHeight = lerp(148.dp, 56.dp, progress)
+    // Expanded height tuned so the padding matches the Trips header: chip + title at the
+    // top, a 16dp gap, then 48dp buttons flush to the card's bottom padding edge — no
+    // dead space below the buttons (128dp = 14 top + 36 title + 16 gap + 48 buttons + 14 bottom).
+    val totalHeight = lerp(128.dp, 56.dp, progress)
     val cornerRadius = lerp(28.dp, 24.dp, progress)
     val subtitleAlpha = (1f - progress * 3f).coerceIn(0f, 1f)
     val onPrimaryContainer = MaterialTheme.colorScheme.onPrimaryContainer
@@ -516,8 +505,11 @@ fun MorphingParkingHeader(
             }
 
             // 3. Camera Button: Glides diagonally and shrinks in width & height
+            // Expanded start Y keeps the same 16dp gap below the title/subtitle block as
+            // the Trips header (label ends at ~36dp; dashboard label ends at ~92dp with
+            // buttons at 108dp).
             val camStartX = 0.dp
-            val camStartY = 70.dp
+            val camStartY = 52.dp
             val camStartW = (contentWidth - 8.dp) / 2
             val camStartH = 48.dp
 
@@ -542,7 +534,7 @@ fun MorphingParkingHeader(
 
             // 4. Gallery Button: Glides diagonally and shrinks in width & height
             val galStartX = (contentWidth + 8.dp) / 2
-            val galStartY = 70.dp
+            val galStartY = 52.dp
             val galStartW = (contentWidth - 8.dp) / 2
             val galStartH = 48.dp
 
@@ -564,27 +556,6 @@ fun MorphingParkingHeader(
                     .width(galW)
                     .height(galH)
             )
-
-            // 5. Loading State
-            if (isAiLoading && subtitleAlpha > 0.05f) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .offset(x = 0.dp, y = 124.dp)
-                        .graphicsLayer { alpha = subtitleAlpha }
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Analyzing Ticket with Gemini AI...",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = onPrimaryContainer
-                    )
-                }
-            }
         }
     }
 }

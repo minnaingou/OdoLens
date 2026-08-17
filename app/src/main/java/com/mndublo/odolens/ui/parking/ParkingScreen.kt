@@ -48,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mndublo.odolens.ui.common.ErrorCard
 import com.mndublo.odolens.ui.common.MorphingParkingHeader
 import com.mndublo.odolens.ui.common.ScanCameraOverlay
+import com.mndublo.odolens.ui.common.ScanProgressCard
 import com.mndublo.odolens.ui.common.loadBitmapFromUri
 import kotlinx.coroutines.launch
 
@@ -164,6 +165,13 @@ fun ParkingScreen(
         }
     }
 
+    // Bring the scan progress/error card into view when a scan starts or fails
+    LaunchedEffect(uiState.isAiLoading, uiState.errorMessage) {
+        if (uiState.isAiLoading || uiState.errorMessage != null) {
+            listState.animateScrollToItem(0)
+        }
+    }
+
     val showActiveOrExpiredCard = uiState.isTimerRunning || uiState.isExpired
 
     // Continuous scroll progress fraction for Idle Mode morphing header
@@ -174,7 +182,7 @@ fun ParkingScreen(
             } else if (listState.firstVisibleItemIndex > 0) {
                 1f
             } else {
-                (listState.firstVisibleItemScrollOffset / 240f).coerceIn(0f, 1f)
+                (listState.firstVisibleItemScrollOffset / 100f).coerceIn(0f, 1f)
             }
         }
     }
@@ -191,8 +199,7 @@ fun ParkingScreen(
                     MorphingParkingHeader(
                         progress = collapseProgress,
                         onCamera = { showCamera = true },
-                        onGallery = { galleryLauncher.launch("image/*") },
-                        isAiLoading = uiState.isAiLoading
+                        onGallery = { galleryLauncher.launch("image/*") }
                     )
                 }
 
@@ -239,6 +246,16 @@ fun ParkingScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    if (uiState.isAiLoading) {
+                        item(key = "scanProgress") {
+                            ScanProgressCard(
+                                message = stringResource(com.mndublo.odolens.R.string.scan_reading_ticket),
+                                onCancel = viewModel::cancelScan,
+                                modifier = Modifier.animateItem()
+                            )
                         }
                     }
 

@@ -118,11 +118,16 @@ object GeminiClient {
                     
                     AppLogger.log("Gemini raw text:\n$textResponse")
 
-                    val parsedJson = JSONObject(textResponse.trim())
-                    val startTime = parsedJson.optString("start_time", "00:00")
-                    val freeDuration = parsedJson.optInt("free_duration_minutes", 0)
-
-                    return@withContext Result.success(ParkingTicketData(startTime, freeDuration))
+                    // Map the JSON into a ticket, failing when the model couldn't actually
+                    // read the image (missing/blank/placeholder fields) so the user gets an
+                    // error card instead of a silent garbage fill. A bad parse tries the
+                    // next model in the fallback list.
+                    val parseOutcome = parseParkingTicketJson(textResponse)
+                    if (parseOutcome.isFailure) {
+                        lastException = parseOutcome.exceptionOrNull() as? Exception
+                        return@use
+                    }
+                    return@withContext parseOutcome
                 }
             } catch (e: Exception) {
                 lastException = e
@@ -294,3 +299,41 @@ data class ParkingTicketData(
     val startTime: String, // HH:mm format
     val freeDurationMinutes: Int
 )
+
+/** Human-facing failure message when the model can't read a parking-ticket image. */
+private const val PARKING_TICKET_UNREADABLE_MESSAGE =
+    "Could not read the parking ticket. Please try a clearer photo or enter the details manually."
+
+/** Lenient HH:mm check (Gemini is instructed to return 24-hour HH:mm). */
+private val HH_MM_PATTERN = Regex("""^\d{1,2}:\d{2}$""")
+
+/**
+ * Pure JSON → [ParkingTicketData] mapping for parking-ticket AI responses, kept
+ * unit-testable. Returns failure when the model couldn't actually read the image:
+ * missing fields, a blank or non-HH:mm start time, a negative duration, or the
+ * "00:00 / 0" placeholder the model emits when it can't find anything on the ticket.
+ */
+internal fun parseParkingTicketJson(textResponse: String): Result<ParkingTicketData> = try {
+    val parsedJson = JSONObject(textResponse.trim())
+
+    if (!parsedJson.has("start_time") || !parsedJson.has("free_duration_minutes")) {
+        return Result.failure(Exception(PARKING_TICKET_UNREADABLE_MESSAGE))
+    }
+
+    val startTime = parsedJson.getString("start_time").trim()
+    val freeDuration = parsedJson.optInt("free_duration_minutes", -1)
+
+    val unreadable = startTime.isBlank() ||
+        !HH_MM_PATTERN.matches(startTime) ||
+        freeDuration < 0 ||
+        // The model's default response when it can't read the image at all.
+        (startTime == "00:00" && freeDuration == 0)
+
+    if (unreadable) {
+        return Result.failure(Exception(PARKING_TICKET_UNREADABLE_MESSAGE))
+    }
+
+    Result.success(ParkingTicketData(startTime, freeDuration))
+} catch (e: Exception) {
+    Result.failure(Exception(PARKING_TICKET_UNREADABLE_MESSAGE, e))
+}

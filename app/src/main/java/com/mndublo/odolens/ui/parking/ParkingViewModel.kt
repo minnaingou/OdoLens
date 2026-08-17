@@ -15,6 +15,7 @@ import com.mndublo.odolens.data.TimeFormatter
 import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +94,9 @@ class ParkingViewModel(
 
     private val _uiState = MutableStateFlow(ParkingUiState())
     val uiState: StateFlow<ParkingUiState> = _uiState.asStateFlow()
+
+    /** In-flight scan job, so the user can cancel a scan from the progress card. */
+    private var scanJob: Job? = null
 
     private var countdownJob: Job? = null
 
@@ -374,25 +378,38 @@ class ParkingViewModel(
      * orchestration stays unit-testable on the JVM.
      */
     fun parseTicket(bitmap: Bitmap?) {
+        scanJob?.cancel()
         val apiKey = _uiState.value.apiKey
-        _uiState.update { it.copy(isAiLoading = true) }
-        viewModelScope.launch {
-            val result = parser.parse(apiKey, bitmap)
-            _uiState.update { it.copy(isAiLoading = false) }
-            result.fold(
-                onSuccess = { data ->
-                    _uiState.update {
-                        it.copy(
-                            startTimeInput = data.startTime,
-                            freeDurationInput = data.freeDurationMinutes.toString()
-                        )
+        _uiState.update { it.copy(isAiLoading = true, errorMessage = null) }
+        scanJob = viewModelScope.launch {
+            try {
+                val result = parser.parse(apiKey, bitmap)
+                _uiState.update { it.copy(isAiLoading = false) }
+                result.fold(
+                    onSuccess = { data ->
+                        _uiState.update {
+                            it.copy(
+                                startTimeInput = data.startTime,
+                                freeDurationInput = data.freeDurationMinutes.toString()
+                            )
+                        }
+                    },
+                    onFailure = { err ->
+                        _uiState.update { it.copy(errorMessage = "AI Parse failed: ${err.message}") }
                     }
-                },
-                onFailure = { err ->
-                    _uiState.update { it.copy(errorMessage = "AI Parse failed: ${err.message}") }
-                }
-            )
+                )
+            } catch (e: CancellationException) {
+                // Scan was cancelled from the progress card — clear the loading state.
+                _uiState.update { it.copy(isAiLoading = false) }
+                throw e
+            }
         }
+    }
+
+    /** Cancels the in-flight scan; the progress card dismisses itself. */
+    fun cancelScan() {
+        scanJob?.cancel()
+        _uiState.update { it.copy(isAiLoading = false) }
     }
 
     fun showError(message: String) = _uiState.update { it.copy(errorMessage = message) }

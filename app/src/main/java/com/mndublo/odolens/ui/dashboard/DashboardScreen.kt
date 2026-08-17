@@ -44,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mndublo.odolens.ui.common.ErrorCard
 import com.mndublo.odolens.ui.common.MorphingDashboardHeader
 import com.mndublo.odolens.ui.common.ScanCameraOverlay
+import com.mndublo.odolens.ui.common.ScanProgressCard
 import com.mndublo.odolens.ui.common.loadBitmapFromUri
 import kotlinx.coroutines.launch
 
@@ -112,8 +113,15 @@ fun DashboardScreen(
             if (listState.firstVisibleItemIndex > 0) {
                 1f
             } else {
-                (listState.firstVisibleItemScrollOffset / 280f).coerceIn(0f, 1f)
+                (listState.firstVisibleItemScrollOffset / 120f).coerceIn(0f, 1f)
             }
+        }
+    }
+
+    // Bring the scan progress/error card into view when a scan starts or fails
+    LaunchedEffect(uiState.isLoading, uiState.errorMessage) {
+        if (uiState.isLoading || uiState.errorMessage != null) {
+            listState.animateScrollToItem(0)
         }
     }
 
@@ -132,9 +140,7 @@ fun DashboardScreen(
                         fuelPriceDate = uiState.fuelPriceDate,
                         onEditPrice = { showEditPriceDialog = true },
                         onCamera = { showCamera = true },
-                        onGallery = { galleryLauncher.launch("image/*") },
-                        isLoading = uiState.isLoading,
-                        statusMessage = uiState.statusMessage
+                        onGallery = { galleryLauncher.launch("image/*") }
                     )
                 }
 
@@ -184,6 +190,16 @@ fun DashboardScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    if (uiState.isLoading) {
+                        item(key = "scanProgress") {
+                            ScanProgressCard(
+                                message = stringResource(com.mndublo.odolens.R.string.scan_reading_photo),
+                                onCancel = viewModel::cancelScan,
+                                modifier = Modifier.animateItem()
+                            )
                         }
                     }
 

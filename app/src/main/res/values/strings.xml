@@ -14,6 +14,9 @@
     <string name="source_camera">Camera</string>
     <string name="source_gallery">Gallery</string>
     <string name="camera_failed_to_load_image">Failed to load captured image.</string>
+    <string name="scan_reading_ticket">Reading your ticket…</string>
+    <string name="scan_reading_photo">Reading your photo…</string>
+    <string name="scan_cancel">Cancel scan</string>
 
     <!-- Dashboard screen -->
     <string name="dashboard_fab_scan">Scan Dashboard</string>
